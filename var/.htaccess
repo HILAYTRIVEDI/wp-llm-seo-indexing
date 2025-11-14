@@ -1,5 +1,0 @@
-Options -Indexes
-<FilesMatch "\.(log|txt|jsonl)$">
-  Order Allow,Deny
-  Deny from all
-</FilesMatch>
