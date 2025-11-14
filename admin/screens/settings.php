@@ -58,19 +58,6 @@ wpllmseo_render_header(
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ); ?>" class="wpllmseo-settings-form">
 		<?php wp_nonce_field( 'wpllmseo_admin_action', 'wpllmseo_nonce' ); ?>
 
-		<div class="notice notice-info inline">
-			<p>
-				<strong><?php esc_html_e( 'API Configuration Moved', 'wpllmseo' ); ?></strong><br>
-				<?php
-				printf(
-					/* translators: %s: URL to providers page */
-					esc_html__( 'API provider settings have been moved to the %s page for better organization.', 'wpllmseo' ),
-					'<a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo_providers' ) ) . '">' . esc_html__( 'API Providers', 'wpllmseo' ) . '</a>'
-				);
-				?>
-			</p>
-		</div>
-
 		<!-- SEO Plugin Compatibility -->
 		<div class="wpllmseo-settings-section">
 			<h2><?php esc_html_e( 'SEO Plugin Compatibility', 'wpllmseo' ); ?></h2>

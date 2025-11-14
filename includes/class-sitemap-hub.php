@@ -211,14 +211,12 @@ class WPLLMSEO_Sitemap_Hub {
 			return;
 		}
 
-		// Get posts with embeddings.
+		// Get all published posts.
 		$posts = get_posts(
 			array(
 				'post_type'      => array( 'post', 'page' ),
 				'post_status'    => 'publish',
 				'posts_per_page' => 50,
-				'meta_key'       => '_wpllmseo_embedding_hash',
-				'meta_compare'   => 'EXISTS',
 			)
 		);
 
@@ -233,8 +231,47 @@ class WPLLMSEO_Sitemap_Hub {
 				'type'  => $post->post_type,
 			);
 
-			// Get related posts (simplified - would use actual semantic similarity).
+			// First, try to get semantic relationships from embeddings.
 			$related = get_post_meta( $post->ID, '_wpllmseo_related_posts', true );
+			
+			// If no semantic relationships exist, create basic relationships using categories/tags.
+			if ( ! is_array( $related ) || empty( $related ) ) {
+				$related = array();
+				
+				// Get posts with shared categories.
+				$categories = wp_get_post_categories( $post->ID );
+				if ( ! empty( $categories ) ) {
+					$cat_posts = get_posts( array(
+						'category__in'   => $categories,
+						'post__not_in'   => array( $post->ID ),
+						'posts_per_page' => 5,
+						'post_status'    => 'publish',
+					) );
+					
+					foreach ( $cat_posts as $cat_post ) {
+						$related[ $cat_post->ID ] = 0.6; // Medium similarity for category match
+					}
+				}
+				
+				// Get posts with shared tags.
+				$tags = wp_get_post_tags( $post->ID, array( 'fields' => 'ids' ) );
+				if ( ! empty( $tags ) ) {
+					$tag_posts = get_posts( array(
+						'tag__in'        => $tags,
+						'post__not_in'   => array_merge( array( $post->ID ), array_keys( $related ) ),
+						'posts_per_page' => 3,
+						'post_status'    => 'publish',
+					) );
+					
+					foreach ( $tag_posts as $tag_post ) {
+						if ( ! isset( $related[ $tag_post->ID ] ) ) {
+							$related[ $tag_post->ID ] = 0.5; // Lower similarity for tag match
+						}
+					}
+				}
+			}
+			
+			// Create edges from relationships.
 			if ( is_array( $related ) ) {
 				foreach ( $related as $related_id => $score ) {
 					$edges[] = array(

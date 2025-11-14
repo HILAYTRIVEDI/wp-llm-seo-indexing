@@ -19,8 +19,19 @@ require_once WPLLMSEO_PLUGIN_DIR . 'admin/components/header.php';
 $settings  = get_option( 'wpllmseo_settings', array() );
 $providers = WPLLMSEO_Provider_Manager::get_providers();
 
+// Force initialization if providers are empty
+if ( empty( $providers ) ) {
+	WPLLMSEO_Provider_Manager::init();
+	$providers = WPLLMSEO_Provider_Manager::get_providers();
+}
+
 // Check for success message.
 $updated = isset( $_GET['updated'] ) && 'true' === $_GET['updated'];
+$has_errors = isset( $_GET['errors'] ) && '1' === $_GET['errors'];
+$error_messages = $has_errors ? get_transient( 'wpllmseo_provider_errors' ) : array();
+if ( $error_messages ) {
+	delete_transient( 'wpllmseo_provider_errors' );
+}
 
 // Render page header.
 wpllmseo_render_header(
@@ -35,6 +46,17 @@ wpllmseo_render_header(
 	<?php if ( $updated ) : ?>
 		<div class="notice notice-success is-dismissible">
 			<p><?php esc_html_e( 'Provider settings saved successfully.', 'wpllmseo' ); ?></p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $has_errors && ! empty( $error_messages ) ) : ?>
+		<div class="notice notice-error is-dismissible">
+			<p><strong><?php esc_html_e( 'There were errors saving provider settings:', 'wpllmseo' ); ?></strong></p>
+			<ul>
+				<?php foreach ( $error_messages as $error ) : ?>
+					<li><?php echo esc_html( $error ); ?></li>
+				<?php endforeach; ?>
+			</ul>
 		</div>
 	<?php endif; ?>
 
@@ -175,8 +197,7 @@ wpllmseo_render_header(
 									$selected  = ( $settings['active_providers']['embedding'] ?? '' ) === $provider_id;
 									?>
 									<option value="<?php echo esc_attr( $provider_id ); ?>" 
-									        <?php selected( $selected ); ?>
-									        <?php echo ! $is_active ? 'disabled' : ''; ?>>
+									        <?php selected( $selected ); ?>>
 										<?php echo esc_html( $provider->get_name() ); ?>
 										<?php echo ! $is_active ? ' (' . esc_html__( 'Not Configured', 'wpllmseo' ) . ')' : ''; ?>
 									</option>
@@ -188,15 +209,21 @@ wpllmseo_render_header(
 						</td>
 					</tr>
 
-					<tr class="wpllmseo-model-row" data-feature="embedding" style="display: none;">
+					<tr class="wpllmseo-model-row" data-feature="embedding" style="<?php echo ! empty( $settings['active_providers']['embedding'] ?? '' ) ? '' : 'display: none;'; ?>">
 						<th scope="row">
 							<label for="embedding_model"><?php esc_html_e( 'Embedding Model', 'wpllmseo' ); ?></label>
 						</th>
 						<td>
 							<select name="active_models[embedding]" id="embedding_model" class="wpllmseo-model-select">
 								<option value=""><?php esc_html_e( 'Select Model', 'wpllmseo' ); ?></option>
+								<?php
+								$current_model = $settings['active_models']['embedding'] ?? '';
+								if ( $current_model ) {
+									echo '<option value="' . esc_attr( $current_model ) . '" selected>' . esc_html( $current_model ) . '</option>';
+								}
+								?>
 							</select>
-							<button type="button" class="button wpllmseo-test-model" data-feature="embedding" style="display: none;">
+							<button type="button" class="button wpllmseo-test-model" data-feature="embedding" style="<?php echo $current_model ? '' : 'display: none;'; ?>">
 								<span class="dashicons dashicons-yes-alt"></span>
 								<?php esc_html_e( 'Test Model', 'wpllmseo' ); ?>
 							</button>
@@ -218,8 +245,7 @@ wpllmseo_render_header(
 									$selected  = ( $settings['active_providers']['generation'] ?? '' ) === $provider_id;
 									?>
 									<option value="<?php echo esc_attr( $provider_id ); ?>" 
-									        <?php selected( $selected ); ?>
-									        <?php echo ! $is_active ? 'disabled' : ''; ?>>
+									        <?php selected( $selected ); ?>>
 										<?php echo esc_html( $provider->get_name() ); ?>
 										<?php echo ! $is_active ? ' (' . esc_html__( 'Not Configured', 'wpllmseo' ) . ')' : ''; ?>
 									</option>
@@ -231,15 +257,21 @@ wpllmseo_render_header(
 						</td>
 					</tr>
 
-					<tr class="wpllmseo-model-row" data-feature="generation" style="display: none;">
+					<tr class="wpllmseo-model-row" data-feature="generation" style="<?php echo ! empty( $settings['active_providers']['generation'] ?? '' ) ? '' : 'display: none;'; ?>">
 						<th scope="row">
 							<label for="generation_model"><?php esc_html_e( 'Generation Model', 'wpllmseo' ); ?></label>
 						</th>
 						<td>
 							<select name="active_models[generation]" id="generation_model" class="wpllmseo-model-select">
 								<option value=""><?php esc_html_e( 'Select Model', 'wpllmseo' ); ?></option>
+								<?php
+								$current_gen_model = $settings['active_models']['generation'] ?? '';
+								if ( $current_gen_model ) {
+									echo '<option value="' . esc_attr( $current_gen_model ) . '" selected>' . esc_html( $current_gen_model ) . '</option>';
+								}
+								?>
 							</select>
-							<button type="button" class="button wpllmseo-test-model" data-feature="generation" style="display: none;">
+							<button type="button" class="button wpllmseo-test-model" data-feature="generation" style="<?php echo $current_gen_model ? '' : 'display: none;'; ?>">
 								<span class="dashicons dashicons-yes-alt"></span>
 								<?php esc_html_e( 'Test Model', 'wpllmseo' ); ?>
 							</button>

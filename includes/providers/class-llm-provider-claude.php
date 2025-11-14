@@ -248,7 +248,7 @@ class WPLLMSEO_LLM_Provider_Claude extends WPLLMSEO_LLM_Provider_Base {
 				'id'          => 'api_key',
 				'label'       => __( 'API Key', 'wpllmseo' ),
 				'type'        => 'password',
-				'required'    => false,
+				'required'    => true,
 				'description' => __( 'Get your API key from Anthropic Console', 'wpllmseo' ),
 				'link'        => 'https://console.anthropic.com/settings/keys',
 			),
@@ -266,11 +266,13 @@ class WPLLMSEO_LLM_Provider_Claude extends WPLLMSEO_LLM_Provider_Base {
 			return new WP_Error( 'missing_api_key', __( 'API key is required', 'wpllmseo' ) );
 		}
 
-		// Test API key with a minimal request.
-		$result = $this->test_model( 'claude-3-haiku-20240307', $config['api_key'] );
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		// For now, just validate that the API key is not empty
+		// We'll test the actual API connection during model discovery
+		// This prevents save failures due to network/API issues
+		
+		// Basic format validation
+		if ( strlen( $config['api_key'] ) < 10 ) {
+			return new WP_Error( 'invalid_api_key', __( 'API key seems too short to be valid', 'wpllmseo' ) );
 		}
 
 		return true;

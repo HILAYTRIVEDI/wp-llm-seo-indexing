@@ -425,3 +425,15 @@
 [2025-11-14 20:58:10] [ERROR] Failed to add job: embed_post | {"post_id":136}
 [2025-11-14 20:58:10] [ERROR] Failed to add job: embed_post | {"post_id":126}
 [2025-11-14 20:58:10] [ERROR] Failed to add job: embed_post | {"post_id":97}
+[2025-11-14 22:44:57] [ERROR] Job execution failed: chunk_post (ID: 38) - Unknown job type: chunk_post | {"job_id":"38","error":"Unknown job type: chunk_post"}
+[2025-11-14 22:44:57] [ERROR] Job execution failed: chunk_post (ID: 38) - Unknown job type: chunk_post | {"job_id":"38","error":"Unknown job type: chunk_post"}
+[2025-11-14 22:44:57] [ERROR] Job execution failed: chunk_post (ID: 38) - Unknown job type: chunk_post | {"job_id":"38","error":"Unknown job type: chunk_post"}
+[2025-11-14 22:44:57] [ERROR] Job failed: 38 - Max retry attempts exceeded
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 113) - Failed to embed snippet: 1 | {"job_id":"113","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 113) - Failed to embed snippet: 1 | {"job_id":"113","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 113) - Failed to embed snippet: 1 | {"job_id":"113","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job failed: 113 - Max retry attempts exceeded
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 114) - Failed to embed snippet: 1 | {"job_id":"114","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 114) - Failed to embed snippet: 1 | {"job_id":"114","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job execution failed: embed_snippet (ID: 114) - Failed to embed snippet: 1 | {"job_id":"114","error":"Failed to embed snippet: 1"}
+[2025-11-14 22:56:59] [ERROR] Job failed: 114 - Max retry attempts exceeded

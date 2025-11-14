@@ -9,3 +9,10 @@
 [2025-11-14 20:15:08] [INFO] Snippet queued for embedding: 4 | {"snippet_id":4,"post_id":"1864"}
 [2025-11-14 20:21:57] [INFO] Snippet queued for embedding: 4 | {"snippet_id":4,"post_id":"1864"}
 [2025-11-14 20:24:17] [INFO] Snippet queued for embedding: 4 | {"snippet_id":4,"post_id":"1864"}
+[2025-11-14 22:44:28] [INFO] Snippet queued for embedding: 1 | {"snippet_id":1,"post_id":1836}
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured
+[2025-11-14 22:56:59] [ERROR] Gemini API key not configured

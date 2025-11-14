@@ -22,3 +22,14 @@
 [2025-11-14 20:58:10] [INFO] MCP tokens table created
 [2025-11-14 21:52:31] [INFO] [GEMINI] Discovered 46 models
 [2025-11-14 21:52:31] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:44:18] [DEBUG] LLMs.txt cache flushed
+[2025-11-14 22:44:22] [DEBUG] LLMs.txt cache flushed
+[2025-11-14 22:44:28] [INFO] Snippet created for post 1836 (ID: 1)
+[2025-11-14 22:44:55] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:48:07] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:54:01] [DEBUG] LLMs.txt file not found at: /Users/hilaytrivedi/Local Sites/llm-indexing/app/public/llms.txt
+[2025-11-14 22:54:14] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:54:48] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:56:34] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:56:47] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 22:58:00] [DEBUG] LLMs.txt cache flushed

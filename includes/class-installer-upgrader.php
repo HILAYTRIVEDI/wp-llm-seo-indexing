@@ -23,7 +23,7 @@ class WPLLMSEO_Installer_Upgrader {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.1.1';
+	const DB_VERSION = '1.2.0';
 
 	/**
 	 * Database version option key
@@ -104,12 +104,18 @@ class WPLLMSEO_Installer_Upgrader {
 			snippet_text LONGTEXT NOT NULL,
 			snippet_hash CHAR(64) DEFAULT '',
 			embedding MEDIUMBLOB DEFAULT NULL,
+			embedding_json LONGTEXT DEFAULT NULL,
+			embedding_format VARCHAR(64) DEFAULT 'json_float_array_v1',
+			embedding_dim INT DEFAULT NULL,
+			embedding_checksum CHAR(64) DEFAULT NULL,
+			embedding_version VARCHAR(32) DEFAULT 'v1',
 			is_preferred TINYINT(1) DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			INDEX idx_post_id (post_id),
 			INDEX idx_preferred (is_preferred),
-			INDEX idx_created (created_at)
+			INDEX idx_created (created_at),
+			UNIQUE INDEX uniq_snippet_hash (snippet_hash)
 		) $charset_collate;";
 
 		// Chunks table
@@ -120,10 +126,17 @@ class WPLLMSEO_Installer_Upgrader {
 			chunk_text LONGTEXT NOT NULL,
 			chunk_hash CHAR(64) DEFAULT '',
 			embedding MEDIUMBLOB DEFAULT NULL,
+			embedding_json LONGTEXT DEFAULT NULL,
+			embedding_format VARCHAR(64) DEFAULT 'json_float_array_v1',
+			embedding_dim INT DEFAULT NULL,
+			embedding_checksum CHAR(64) DEFAULT NULL,
+			embedding_version VARCHAR(32) DEFAULT 'v1',
 			chunk_index INT DEFAULT 0,
+			token_count INT DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			INDEX idx_post_id (post_id),
+			INDEX idx_post_id_chunk_index (post_id, chunk_index),
 			INDEX idx_created (created_at)
 		) $charset_collate;";
 
@@ -137,21 +150,55 @@ class WPLLMSEO_Installer_Upgrader {
 			payload LONGTEXT DEFAULT NULL,
 			status VARCHAR(20) DEFAULT 'queued',
 			attempts INT DEFAULT 0,
+			max_attempts INT DEFAULT 5,
+			last_error TEXT DEFAULT NULL,
 			locked TINYINT(1) DEFAULT 0,
 			locked_at DATETIME DEFAULT NULL,
+			runner VARCHAR(128) DEFAULT NULL,
+			dedupe_key VARCHAR(191) DEFAULT NULL,
+			run_after DATETIME DEFAULT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			INDEX idx_status (status),
 			INDEX idx_locked (locked),
 			INDEX idx_post_id (post_id),
 			INDEX idx_snippet_id (snippet_id),
-			INDEX idx_created (created_at)
+			INDEX idx_created (created_at),
+			INDEX idx_status_locked_created (status, locked, created_at),
+			INDEX idx_dedupe_key (dedupe_key)
 		) $charset_collate;";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $snippets_sql );
 		dbDelta( $chunks_sql );
 		dbDelta( $jobs_sql );
+		
+		// Dead-letter table for failed jobs
+		$dead_letter_table = $wpdb->prefix . 'wpllmseo_jobs_dead_letter';
+		$dead_letter_sql   = "CREATE TABLE IF NOT EXISTS $dead_letter_table (
+			id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			original_job_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			payload LONGTEXT DEFAULT NULL,
+			reason TEXT DEFAULT NULL,
+			failed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			INDEX idx_job_id (original_job_id),
+			INDEX idx_failed_at (failed_at)
+		) $charset_collate;";
+		dbDelta( $dead_letter_sql );
+		
+		// Token table for two-stage candidate selection
+		$tokens_table = $wpdb->prefix . 'wpllmseo_tokens';
+		$tokens_sql   = "CREATE TABLE IF NOT EXISTS $tokens_table (
+			id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			post_id BIGINT(20) UNSIGNED NOT NULL,
+			token VARCHAR(191) NOT NULL,
+			score FLOAT DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			INDEX idx_token (token),
+			INDEX idx_post_id (post_id),
+			INDEX idx_token_post_id (token, post_id)
+		) $charset_collate;";
+		dbDelta( $tokens_sql );
 		
 		// Create crawler logs table (lower priority feature)
 		WPLLMSEO_Crawler_Logs::create_table();
@@ -173,6 +220,74 @@ class WPLLMSEO_Installer_Upgrader {
 		$snippets_table = $wpdb->prefix . 'wpllmseo_snippets';
 		$chunks_table   = $wpdb->prefix . 'wpllmseo_chunks';
 		$jobs_table     = $wpdb->prefix . 'wpllmseo_jobs';
+
+		// === v1.2.0 Migrations for Enterprise Features ===
+		
+		// Add embedding metadata columns to snippets table
+		$embedding_columns = array(
+			'embedding_json' => 'LONGTEXT DEFAULT NULL',
+			'embedding_format' => "VARCHAR(64) DEFAULT 'json_float_array_v1'",
+			'embedding_dim' => 'INT DEFAULT NULL',
+			'embedding_checksum' => 'CHAR(64) DEFAULT NULL',
+			'embedding_version' => "VARCHAR(32) DEFAULT 'v1'",
+		);
+		
+		foreach ( $embedding_columns as $col => $definition ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $snippets_table LIKE '$col'" );
+			if ( empty( $column_exists ) ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->query( "ALTER TABLE $snippets_table ADD COLUMN $col $definition" );
+			}
+		}
+		
+		// Add embedding metadata columns to chunks table
+		foreach ( $embedding_columns as $col => $definition ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $chunks_table LIKE '$col'" );
+			if ( empty( $column_exists ) ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN $col $definition" );
+			}
+		}
+		
+		// Add token_count to chunks table
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $chunks_table LIKE 'token_count'" );
+		if ( empty( $column_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN token_count INT DEFAULT 0" );
+		}
+		
+		// Add job retry columns
+		$job_columns = array(
+			'max_attempts' => 'INT DEFAULT 5',
+			'last_error' => 'TEXT DEFAULT NULL',
+			'runner' => 'VARCHAR(128) DEFAULT NULL',
+			'dedupe_key' => 'VARCHAR(191) DEFAULT NULL',
+			'run_after' => 'DATETIME DEFAULT NULL',
+		);
+		
+		foreach ( $job_columns as $col => $definition ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE '$col'" );
+			if ( empty( $column_exists ) ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN $col $definition" );
+			}
+		}
+		
+		// Add missing indexes
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_status_locked_created ON $jobs_table (status, locked, created_at)" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_dedupe_key ON $jobs_table (dedupe_key)" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_post_id_chunk_index ON $chunks_table (post_id, chunk_index)" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "CREATE UNIQUE INDEX IF NOT EXISTS uniq_snippet_hash ON $snippets_table (snippet_hash)" );
+
+		// === Legacy Migrations ===
 
 		// Check if is_preferred column exists in snippets
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -215,8 +330,6 @@ class WPLLMSEO_Installer_Upgrader {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->query( "ALTER TABLE $jobs_table ADD INDEX idx_snippet_id (snippet_id)" );
 		}
-
-		// Add any future migrations here based on version comparisons
 	}
 
 	/**
@@ -449,11 +562,8 @@ class WPLLMSEO_Installer_Upgrader {
 			);
 		}
 
-		// Check if API key is set
-		$settings = get_option( 'wpllmseo_settings', array() );
-		if ( empty( $settings['api_key'] ) ) {
-			$errors[] = __( 'Gemini API key is not configured. Please add your API key in Settings.', 'wpllmseo' );
-		}
+		// Don't check for API key here - it's now handled by the multi-provider system
+		// Users can configure API keys in the API Providers page
 
 		return $errors;
 	}

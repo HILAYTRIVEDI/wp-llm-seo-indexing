@@ -21,32 +21,39 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 function wpllmseo_uninstall() {
 	global $wpdb;
 
-	// Determine what to delete
-	$delete_all_data = defined( 'WPLLMSEO_DELETE_ALL_DATA' ) && WPLLMSEO_DELETE_ALL_DATA === true;
-
-	if ( $delete_all_data ) {
-		// Delete database tables
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpllmseo_snippets" );
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpllmseo_chunks" );
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpllmseo_jobs" );
-
-		// Delete log files
-		wpllmseo_delete_directory( plugin_dir_path( __FILE__ ) . 'var/logs' );
-
-		// Delete cache files
-		wpllmseo_delete_directory( plugin_dir_path( __FILE__ ) . 'var/cache' );
-
-		// Delete transients
-		wpllmseo_delete_transients();
+	// Delete all database tables (no conditional - always clean up on uninstall)
+	$tables = array(
+		'wpllmseo_snippets',
+		'wpllmseo_chunks',
+		'wpllmseo_jobs',
+		'wpllmseo_jobs_dead_letter',
+		'wpllmseo_tokens',
+		'wpllmseo_crawler_logs',
+		'wpllmseo_mcp_audit',
+		'wpllmseo_mcp_tokens',
+	);
+	
+	foreach ( $tables as $table ) {
+		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" );
 	}
 
-	// Always delete plugin settings
+	// Delete log files
+	wpllmseo_delete_directory( plugin_dir_path( __FILE__ ) . 'var/logs' );
+
+	// Delete cache files
+	wpllmseo_delete_directory( plugin_dir_path( __FILE__ ) . 'var/cache' );
+
+	// Delete transients
+	wpllmseo_delete_transients();
+
+	// Delete plugin settings
 	delete_option( 'wpllmseo_settings' );
 	delete_option( 'wpllmseo_db_version' );
 
 	// Clear scheduled cron events
 	wp_clear_scheduled_hook( 'wpllmseo_worker_event' );
 	wp_clear_scheduled_hook( 'wpllmseo_generate_ai_sitemap_daily' );
+	wp_clear_scheduled_hook( 'wpllmseo_cleanup_expired_tokens' );
 
 	// Remove capabilities
 	wpllmseo_remove_capabilities();

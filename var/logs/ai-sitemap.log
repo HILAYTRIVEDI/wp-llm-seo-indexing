@@ -44,3 +44,20 @@
 [2025-11-14 20:58:10] [INFO] AI Sitemap generation started | {"stream":false}
 [2025-11-14 20:58:10] [INFO] AI Sitemap generation completed (string) | {"posts":38,"size":23649,"execution_time":"23.29ms"}
 [2025-11-14 20:58:10] [INFO] Cache regenerated successfully | {"file_size":23649,"path":"/Users/hilaytrivedi/Local Sites/aeo/app/public/wp-content/plugins/wp-llm-seo-indexing/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 22:38:58] [INFO] Daily cron regeneration started
+[2025-11-14 22:38:58] [INFO] Cache regeneration requested
+[2025-11-14 22:38:58] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 22:38:58] [INFO] AI Sitemap generation completed (string) | {"posts":37,"size":22995,"execution_time":"19.58ms"}
+[2025-11-14 22:38:58] [INFO] Cache regenerated successfully | {"file_size":22995,"path":"/Users/hilaytrivedi/Local Sites/llm-indexing/app/public/wp-content/plugins/wp-llm-seo-indexing-master/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 22:44:18] [INFO] Cache regeneration requested
+[2025-11-14 22:44:18] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 22:44:18] [INFO] AI Sitemap generation completed (string) | {"posts":37,"size":22995,"execution_time":"28.04ms"}
+[2025-11-14 22:44:18] [INFO] Cache regenerated successfully | {"file_size":22995,"path":"/Users/hilaytrivedi/Local Sites/llm-indexing/app/public/wp-content/plugins/wp-llm-seo-indexing-master/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 22:44:22] [INFO] Cache regeneration requested
+[2025-11-14 22:44:22] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 22:44:22] [INFO] AI Sitemap generation completed (string) | {"posts":37,"size":22995,"execution_time":"30.3ms"}
+[2025-11-14 22:44:22] [INFO] Cache regenerated successfully | {"file_size":22995,"path":"/Users/hilaytrivedi/Local Sites/llm-indexing/app/public/wp-content/plugins/wp-llm-seo-indexing-master/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 22:58:00] [INFO] Cache regeneration requested
+[2025-11-14 22:58:00] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 22:58:00] [INFO] AI Sitemap generation completed (string) | {"posts":37,"size":22995,"execution_time":"30.72ms"}
+[2025-11-14 22:58:00] [INFO] Cache regenerated successfully | {"file_size":22995,"path":"/Users/hilaytrivedi/Local Sites/llm-indexing/app/public/wp-content/plugins/wp-llm-seo-indexing-master/var/cache/ai-sitemap.jsonl"}

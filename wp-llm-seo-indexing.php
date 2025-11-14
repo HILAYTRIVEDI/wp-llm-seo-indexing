@@ -85,18 +85,147 @@ function wpllmseo_init() {
 		dirname( plugin_basename( __FILE__ ) ) . '/languages'
 	);
 
+	// Check if tables exist, if not run installer
+	global $wpdb;
+	$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}wpllmseo_snippets'" );
+	if ( ! $table_exists ) {
+		WPLLMSEO_Installer_Upgrader::install();
+	}
+
+	// Check environment requirements
+	$errors = WPLLMSEO_Installer_Upgrader::check_requirements();
+	if ( ! empty( $errors ) ) {
+		add_action( 'admin_notices', array( 'WPLLMSEO_Installer_Upgrader', 'display_requirement_notices' ) );
+		// Don't return - still initialize admin so user can fix issues
+	}
+
+	// Initialize capabilities
+	WPLLMSEO_Capabilities::init();
+
+	// Check if upgrade needed (auto-upgrade on every load if needed)
+	$installed_version = get_option( 'wpllmseo_db_version', '0.0.0' );
+	if ( version_compare( $installed_version, WPLLMSEO_VERSION, '<' ) ) {
+		WPLLMSEO_Installer_Upgrader::install();
+	}
+
 	// Initialize admin interface if in admin area.
 	if ( is_admin() ) {
 		WPLLMSEO_Admin::init();
 	}
-
-	// Hook for plugin activation.
-	register_activation_hook( __FILE__, 'wpllmseo_activate' );
-
-	// Hook for plugin deactivation.
-	register_deactivation_hook( __FILE__, 'wpllmseo_deactivate' );
+	
+	// Load enterprise helper functions (v1.2.0+)
+	$helper_files = array(
+		'includes/helpers/embedding.php',
+		'includes/helpers/tokenizer.php',
+		'includes/helpers/enterprise-worker.php',
+	);
+	foreach ( $helper_files as $file ) {
+		$full_path = WPLLMSEO_PLUGIN_DIR . $file;
+		if ( file_exists( $full_path ) ) {
+			require_once $full_path;
+		}
+	}
+	
+	// Initialize Multi-Provider System (v1.2.0+)
+	if ( file_exists( WPLLMSEO_PLUGIN_DIR . 'includes/providers/interface-llm-provider.php' ) ) {
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/providers/interface-llm-provider.php';
+	}
+	if ( file_exists( WPLLMSEO_PLUGIN_DIR . 'includes/providers/class-llm-provider-base.php' ) ) {
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/providers/class-llm-provider-base.php';
+	}
+	if ( class_exists( 'WPLLMSEO_Provider_Manager' ) ) {
+		WPLLMSEO_Provider_Manager::init();
+	}
+	
+	// Initialize Module 2: Snippet System
+	if ( class_exists( 'WPLLMSEO_Snippets' ) ) {
+		new WPLLMSEO_Snippets();
+	}
+	if ( class_exists( 'WPLLMSEO_Snippet_REST' ) ) {
+		new WPLLMSEO_Snippet_REST();
+	}
+	if ( class_exists( 'WPLLMSEO_Snippet_Indexer' ) ) {
+		new WPLLMSEO_Snippet_Indexer();
+	}
+	
+	// Initialize Module 3: Queue System
+	if ( class_exists( 'WPLLMSEO_Worker' ) ) {
+		new WPLLMSEO_Worker();
+	}
+	if ( class_exists( 'WPLLMSEO_Worker_REST' ) ) {
+		new WPLLMSEO_Worker_REST();
+	}
+	
+	// Initialize Module 4: RAG System
+	if ( class_exists( 'WPLLMSEO_RAG_REST' ) ) {
+		new WPLLMSEO_RAG_REST();
+	}
+	
+	// Initialize Module 5: AI Sitemap
+	if ( class_exists( 'WPLLMSEO_AI_Sitemap_REST' ) ) {
+		new WPLLMSEO_AI_Sitemap_REST();
+	}
+	
+	// Initialize Module 6: Dashboard Analytics
+	if ( class_exists( 'WPLLMSEO_Dashboard_REST' ) ) {
+		new WPLLMSEO_Dashboard_REST();
+	}
+	
+	// Initialize High Priority Features
+	if ( class_exists( 'WPLLMSEO_SEO_Compat' ) ) {
+		WPLLMSEO_SEO_Compat::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Change_Tracker' ) ) {
+		WPLLMSEO_Change_Tracker::init();
+	}
+	if ( class_exists( 'WPLLMSEO_LLM_JSONLD' ) ) {
+		WPLLMSEO_LLM_JSONLD::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Bulk_Snippet_Generator' ) ) {
+		WPLLMSEO_Bulk_Snippet_Generator::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Post_Panel' ) ) {
+		WPLLMSEO_Post_Panel::init();
+	}
+	
+	// Initialize Medium Priority Features
+	if ( class_exists( 'WPLLMSEO_Sitemap_Hub' ) ) {
+		WPLLMSEO_Sitemap_Hub::init();
+	}
+	if ( class_exists( 'WPLLMSEO_LLM_API' ) ) {
+		WPLLMSEO_LLM_API::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Semantic_Linking' ) ) {
+		WPLLMSEO_Semantic_Linking::init();
+	}
+	
+	// Initialize Lower Priority Features
+	if ( class_exists( 'WPLLMSEO_Media_Embeddings' ) ) {
+		WPLLMSEO_Media_Embeddings::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Semantic_Dashboard' ) ) {
+		WPLLMSEO_Semantic_Dashboard::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Model_Manager' ) ) {
+		WPLLMSEO_Model_Manager::init();
+	}
+	if ( class_exists( 'WPLLMSEO_Crawler_Logs' ) ) {
+		WPLLMSEO_Crawler_Logs::init();
+	}
+	if ( class_exists( 'WPLLMSEO_HTML_Renderer' ) ) {
+		WPLLMSEO_HTML_Renderer::init();
+	}
+	
+	// Initialize MCP Integration (v1.1.0+)
+	if ( class_exists( 'WPLLMSEO_MCP_Adapter' ) ) {
+		WPLLMSEO_MCP_Adapter::init();
+	}
 }
 add_action( 'plugins_loaded', 'wpllmseo_init' );
+
+// Register activation/deactivation hooks (must be outside plugins_loaded)
+register_activation_hook( __FILE__, 'wpllmseo_activate' );
+register_deactivation_hook( __FILE__, 'wpllmseo_deactivate' );
 
 /**
  * Activation hook - create necessary directories and database tables
@@ -104,6 +233,9 @@ add_action( 'plugins_loaded', 'wpllmseo_init' );
 function wpllmseo_activate() {
 	// Run installer
 	WPLLMSEO_Installer_Upgrader::install();
+	
+	// Flush rewrite rules to register custom endpoints
+	flush_rewrite_rules();
 }
 
 /**
@@ -171,77 +303,6 @@ function wpllmseo_log( $message, $level = 'info' ) {
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 	file_put_contents( $log_file, $log_entry, FILE_APPEND );
 }
-
-/**
- * Initialize plugin components.
- */
-add_action( 'plugins_loaded', function() {
-	// Check environment requirements
-	$errors = WPLLMSEO_Installer_Upgrader::check_requirements();
-	if ( ! empty( $errors ) ) {
-		add_action( 'admin_notices', array( 'WPLLMSEO_Installer_Upgrader', 'display_requirement_notices' ) );
-		return;
-	}
-
-	// Initialize capabilities
-	WPLLMSEO_Capabilities::init();
-
-	// Check if upgrade needed
-	$installed_version = get_option( 'wpllmseo_db_version', '0.0.0' );
-	if ( version_compare( $installed_version, WPLLMSEO_VERSION, '<' ) ) {
-		WPLLMSEO_Installer_Upgrader::install();
-	}
-
-	// Initialize admin interface.
-	if ( is_admin() ) {
-		WPLLMSEO_Admin::init();
-	}
-	
-	// Initialize Module 2: Snippet System
-	new WPLLMSEO_Snippets();
-	new WPLLMSEO_Snippet_REST();
-	new WPLLMSEO_Snippet_Indexer();
-	
-	// Initialize Module 3: Queue System
-	new WPLLMSEO_Worker();
-	new WPLLMSEO_Worker_REST();
-	
-	// Initialize Module 4: RAG System
-	new WPLLMSEO_RAG_REST();
-	
-	// Initialize Module 5: AI Sitemap
-	new WPLLMSEO_AI_Sitemap_REST();
-	
-	// Initialize Module 6: Dashboard Analytics
-	new WPLLMSEO_Dashboard_REST();
-	
-	// Initialize Multi-Provider System (v1.2.0+)
-	require_once WPLLMSEO_PLUGIN_DIR . 'includes/providers/interface-llm-provider.php';
-	require_once WPLLMSEO_PLUGIN_DIR . 'includes/providers/class-llm-provider-base.php';
-	WPLLMSEO_Provider_Manager::init();
-	
-	// Initialize High Priority Features
-	WPLLMSEO_SEO_Compat::init();
-	WPLLMSEO_Change_Tracker::init();
-	WPLLMSEO_LLM_JSONLD::init();
-	WPLLMSEO_Bulk_Snippet_Generator::init();
-	WPLLMSEO_Post_Panel::init();
-	
-	// Initialize Medium Priority Features
-	WPLLMSEO_Sitemap_Hub::init();
-	WPLLMSEO_LLM_API::init();
-	WPLLMSEO_Semantic_Linking::init();
-	
-	// Initialize Lower Priority Features
-	WPLLMSEO_Media_Embeddings::init();
-	WPLLMSEO_Semantic_Dashboard::init();
-	WPLLMSEO_Model_Manager::init();
-	WPLLMSEO_Crawler_Logs::init();
-	WPLLMSEO_HTML_Renderer::init();
-	
-	// Initialize MCP Integration (v1.1.0+)
-	WPLLMSEO_MCP_Adapter::init();
-} );
 
 /**
  * Load WP-CLI commands if WP-CLI is running
