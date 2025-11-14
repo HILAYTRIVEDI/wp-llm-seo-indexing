@@ -39,7 +39,7 @@ wpllmseo_render_header(
 	<?php endif; ?>
 
 	<!-- Provider Configuration -->
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=wpllmseo_providers' ) ); ?>" id="wpllmseo-provider-form">
+	<form method="post" action="" id="wpllmseo-provider-form">
 		<?php wp_nonce_field( 'wpllmseo_admin_action', 'wpllmseo_nonce' ); ?>
 
 		<?php foreach ( $providers as $provider_id => $provider ) : ?>
@@ -75,9 +75,6 @@ wpllmseo_render_header(
 								<th scope="row">
 									<label for="<?php echo esc_attr( $field_id ); ?>">
 										<?php echo esc_html( $field['label'] ); ?>
-										<?php if ( ! empty( $field['required'] ) ) : ?>
-											<span class="required">*</span>
-										<?php endif; ?>
 									</label>
 								</th>
 								<td>
@@ -87,15 +84,13 @@ wpllmseo_render_header(
 										       name="<?php echo esc_attr( $field_name ); ?>" 
 										       value="<?php echo esc_attr( $field_value ); ?>" 
 										       class="regular-text"
-										       autocomplete="off"
-										       <?php echo ! empty( $field['required'] ) ? 'required' : ''; ?> />
+										       autocomplete="off" />
 									<?php elseif ( 'text' === $field['type'] ) : ?>
 										<input type="text" 
 										       id="<?php echo esc_attr( $field_id ); ?>" 
 										       name="<?php echo esc_attr( $field_name ); ?>" 
 										       value="<?php echo esc_attr( $field_value ); ?>" 
-										       class="regular-text"
-										       <?php echo ! empty( $field['required'] ) ? 'required' : ''; ?> />
+										       class="regular-text" />
 									<?php endif; ?>
 
 									<?php if ( ! empty( $field['description'] ) ) : ?>

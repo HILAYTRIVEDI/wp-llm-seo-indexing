@@ -51,7 +51,7 @@ class WPLLMSEO_RAG_Engine {
 	 *
 	 * @var string
 	 */
-	private $model = 'models/text-embedding-004';
+	private $model = 'text-embedding-004';
 
 	/**
 	 * Constructor
@@ -173,7 +173,7 @@ class WPLLMSEO_RAG_Engine {
 		}
 
 		// Prepare request.
-		$url = 'https://generativelanguage.googleapis.com/v1/' . $this->model . ':embedContent';
+		$url = 'https://generativelanguage.googleapis.com/v1/models/' . $this->model . ':embedContent';
 		$url = add_query_arg( 'key', $this->api_key, $url );
 
 		$body = array(

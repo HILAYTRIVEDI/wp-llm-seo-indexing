@@ -160,9 +160,12 @@ class WPLLMSEO_Snippet_Indexer {
 	 * @return array|false Embedding array or false on failure.
 	 */
 	private function generate_embedding( $text, $api_key, $model ) {
+		// Remove 'models/' prefix if present to avoid duplication in URL
+		$model_path = str_replace( 'models/', '', $model );
+		
 		$url = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent?key=%s',
-			$model,
+			$model_path,
 			$api_key
 		);
 

@@ -363,7 +363,7 @@ class WPLLMSEO_LLM_Provider_OpenAI extends WPLLMSEO_LLM_Provider_Base {
 				'id'          => 'api_key',
 				'label'       => __( 'API Key', 'wpllmseo' ),
 				'type'        => 'password',
-				'required'    => true,
+				'required'    => false,
 				'description' => __( 'Get your API key from OpenAI platform', 'wpllmseo' ),
 				'link'        => 'https://platform.openai.com/api-keys',
 			),

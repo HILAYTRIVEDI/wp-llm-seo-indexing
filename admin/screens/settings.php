@@ -58,57 +58,17 @@ wpllmseo_render_header(
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ); ?>" class="wpllmseo-settings-form">
 		<?php wp_nonce_field( 'wpllmseo_admin_action', 'wpllmseo_nonce' ); ?>
 
-		<!-- API Configuration -->
-		<div class="wpllmseo-settings-section">
-			<h2><?php esc_html_e( 'API Configuration', 'wpllmseo' ); ?></h2>
-			<p class="description">
-				<?php esc_html_e( 'Configure your Google Gemini API credentials for LLM embeddings.', 'wpllmseo' ); ?>
+		<div class="notice notice-info inline">
+			<p>
+				<strong><?php esc_html_e( 'API Configuration Moved', 'wpllmseo' ); ?></strong><br>
+				<?php
+				printf(
+					/* translators: %s: URL to providers page */
+					esc_html__( 'API provider settings have been moved to the %s page for better organization.', 'wpllmseo' ),
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo_providers' ) ) . '">' . esc_html__( 'API Providers', 'wpllmseo' ) . '</a>'
+				);
+				?>
 			</p>
-
-			<table class="form-table" role="presentation">
-				<tbody>
-					<tr>
-						<th scope="row">
-							<label for="api_key"><?php esc_html_e( 'API Key', 'wpllmseo' ); ?></label>
-						</th>
-						<td>
-							<input type="password" 
-							       id="api_key" 
-							       name="api_key" 
-							       value="<?php echo esc_attr( $settings['api_key'] ); ?>" 
-							       class="regular-text"
-							       autocomplete="off" />
-							<p class="description">
-								<?php
-								printf(
-									/* translators: %s: URL to Google AI Studio */
-									esc_html__( 'Enter your Google Gemini API key. Get one from %s.', 'wpllmseo' ),
-									'<a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>'
-								);
-								?>
-							</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row">
-							<label for="model"><?php esc_html_e( 'Embedding Model', 'wpllmseo' ); ?></label>
-						</th>
-						<td>
-							<select id="model" name="model">
-								<option value="models/text-embedding-004" <?php selected( $settings['model'], 'models/text-embedding-004' ); ?>>
-									<?php esc_html_e( 'Text Embedding 004 (Recommended)', 'wpllmseo' ); ?>
-								</option>
-								<option value="models/embedding-001" <?php selected( $settings['model'], 'models/embedding-001' ); ?>>
-									<?php esc_html_e( 'Embedding 001 (Legacy)', 'wpllmseo' ); ?>
-								</option>
-							</select>
-							<p class="description">
-								<?php esc_html_e( 'Select the embedding model to use for generating content vectors.', 'wpllmseo' ); ?>
-							</p>
-						</td>
-					</tr>
-				</tbody>
-			</table>
 		</div>
 
 		<!-- SEO Plugin Compatibility -->

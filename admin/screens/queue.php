@@ -16,6 +16,52 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WPLLMSEO_PLUGIN_DIR . 'admin/components/header.php';
 require_once WPLLMSEO_PLUGIN_DIR . 'admin/components/table.php';
 
+// Handle bulk actions
+if ( isset( $_POST['wpllmseo_clear_failed_regenerate'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
+	global $wpdb;
+	$queue_table = $wpdb->prefix . 'wpllmseo_jobs';
+	
+	// Clear all failed jobs
+	$deleted = $wpdb->query( "DELETE FROM $queue_table WHERE status = 'failed'" );
+	
+	// Clear all pending jobs to avoid duplicates
+	$wpdb->query( "DELETE FROM $queue_table WHERE status = 'pending'" );
+	
+	// Get all published posts
+	$posts = get_posts(
+		array(
+			'post_type'      => array( 'post', 'page' ),
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+		)
+	);
+	
+	$queue_obj = new WPLLMSEO_Queue();
+	$queued = 0;
+	
+	foreach ( $posts as $post ) {
+		$job_id = $queue_obj->add(
+			'embed_post',
+			array( 'post_id' => $post->ID )
+		);
+		if ( $job_id ) {
+			$queued++;
+		}
+	}
+	
+	// Clear semantic map cache
+	delete_transient( 'wpllmseo_sitemap_semantic_map' );
+	
+	echo '<div class="notice notice-success is-dismissible"><p>';
+	printf(
+		/* translators: 1: deleted count, 2: queued count */
+		esc_html__( 'Cleared %1$d failed jobs and queued %2$d posts for re-indexing.', 'wpllmseo' ),
+		(int) $deleted,
+		(int) $queued
+	);
+	echo '</p></div>';
+}
+
 // Render page header.
 wpllmseo_render_header(
 	array(
@@ -86,7 +132,7 @@ foreach ( $queue_items_raw as $item ) {
 		'post_id'    => $post_id,
 		'job_type'   => $item->job_type,
 		'attempts'   => $item->attempts,
-		'error'      => $item->error_message,
+		'error'      => isset( $item->error_message ) ? $item->error_message : '',
 	);
 }
 
@@ -185,6 +231,30 @@ $actions = array(
 			<span class="wpllmseo-stat-label"><?php esc_html_e( 'Failed', 'wpllmseo' ); ?></span>
 		</div>
 	</div>
+
+	<?php if ( $queue_stats['failed'] > 0 ) : ?>
+		<div class="notice notice-warning inline">
+			<p>
+				<strong><?php esc_html_e( 'Failed Jobs Detected', 'wpllmseo' ); ?></strong><br>
+				<?php
+				printf(
+					/* translators: %d: number of failed jobs */
+					esc_html( _n( '%d job has failed.', '%d jobs have failed.', $queue_stats['failed'], 'wpllmseo' ) ),
+					(int) $queue_stats['failed']
+				);
+				echo ' ';
+				esc_html_e( 'This is likely due to API configuration issues. Clear failed jobs and regenerate after fixing your API settings.', 'wpllmseo' );
+				?>
+			</p>
+			<form method="post" style="margin-top: 10px;" onsubmit="return confirm('<?php esc_attr_e( 'This will clear all failed jobs and re-queue all published posts. Continue?', 'wpllmseo' ); ?>');">
+				<?php wp_nonce_field( 'wpllmseo_admin_action', 'wpllmseo_nonce' ); ?>
+				<button type="submit" name="wpllmseo_clear_failed_regenerate" class="button button-primary">
+					<span class="dashicons dashicons-update-alt" style="margin-top: 3px;"></span>
+					<?php esc_html_e( 'Clear Failed & Regenerate All', 'wpllmseo' ); ?>
+				</button>
+			</form>
+		</div>
+	<?php endif; ?>
 
 	<!-- Queue Table -->
 	<?php

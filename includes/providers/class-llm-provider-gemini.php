@@ -119,7 +119,7 @@ class WPLLMSEO_LLM_Provider_Gemini extends WPLLMSEO_LLM_Provider_Base {
 	public function get_default_models(): array {
 		return array(
 			$this->format_model(
-				'models/text-embedding-004',
+				'text-embedding-004',
 				'text-embedding-004',
 				'embedding',
 				array(
@@ -129,7 +129,7 @@ class WPLLMSEO_LLM_Provider_Gemini extends WPLLMSEO_LLM_Provider_Base {
 				)
 			),
 			$this->format_model(
-				'models/embedding-001',
+				'embedding-001',
 				'embedding-001',
 				'embedding',
 				array(
@@ -138,30 +138,28 @@ class WPLLMSEO_LLM_Provider_Gemini extends WPLLMSEO_LLM_Provider_Base {
 				)
 			),
 			$this->format_model(
-				'models/gemini-pro',
+				'gemini-pro',
 				'gemini-pro',
 				'generation',
 				array(
-					'description'    => __( 'Gemini Pro for text generation', 'wpllmseo' ),
-					'context_window' => 30720,
-					'max_tokens'     => 2048,
-					'recommended'    => true,
-				)
-			),
-			$this->format_model(
-				'models/gemini-1.5-pro',
-				'gemini-1.5-pro',
-				'generation',
-				array(
-					'description'    => __( 'Gemini 1.5 Pro with extended context window', 'wpllmseo' ),
-					'context_window' => 1048576,
-					'max_tokens'     => 8192,
-				)
-			),
-		);
-	}
-
-	/**
+				'description'    => __( 'Gemini Pro for text generation', 'wpllmseo' ),
+				'context_window' => 30720,
+				'max_tokens'     => 2048,
+				'recommended'    => true,
+			)
+		),
+		$this->format_model(
+			'gemini-1.5-pro',
+			'gemini-1.5-pro',
+			'generation',
+			array(
+				'description'    => __( 'Gemini 1.5 Pro with extended context window', 'wpllmseo' ),
+				'context_window' => 1048576,
+				'max_tokens'     => 8192,
+			)
+		),
+	);
+}	/**
 	 * Generate embeddings
 	 *
 	 * @param string $text    Text to embed.
@@ -330,7 +328,7 @@ class WPLLMSEO_LLM_Provider_Gemini extends WPLLMSEO_LLM_Provider_Base {
 				'id'          => 'api_key',
 				'label'       => __( 'API Key', 'wpllmseo' ),
 				'type'        => 'password',
-				'required'    => true,
+				'required'    => false,
 				'description' => __( 'Get your API key from Google AI Studio', 'wpllmseo' ),
 				'link'        => 'https://makersuite.google.com/app/apikey',
 			),

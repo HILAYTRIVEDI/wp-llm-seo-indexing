@@ -162,7 +162,7 @@ class WPLLMSEO_Change_Tracker {
 		$queue = new WPLLMSEO_Queue();
 
 		// Add chunking job.
-		$queue->add_job(
+		$queue->add(
 			'chunk_post',
 			array(
 				'post_id' => $post_id,

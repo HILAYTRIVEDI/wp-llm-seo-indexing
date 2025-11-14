@@ -28,7 +28,7 @@ define( 'WPLLMSEO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WPLLMSEO_PLUGIN_FILE', __FILE__ );
 define( 'WPLLMSEO_TEXT_DOMAIN', 'wpllmseo' );
 define( 'WPLLMSEO_REST_NAMESPACE', 'wp-llmseo/v1' );
-define( 'WPLLMSEO_GEMINI_MODEL', 'models/text-embedding-004' );
+define( 'WPLLMSEO_GEMINI_MODEL', 'text-embedding-004' );
 
 /**
  * Autoload plugin classes.
@@ -194,7 +194,7 @@ add_action( 'plugins_loaded', function() {
 
 	// Initialize admin interface.
 	if ( is_admin() ) {
-		new WPLLMSEO_Admin();
+		WPLLMSEO_Admin::init();
 	}
 	
 	// Initialize Module 2: Snippet System

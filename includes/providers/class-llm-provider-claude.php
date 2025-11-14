@@ -248,7 +248,7 @@ class WPLLMSEO_LLM_Provider_Claude extends WPLLMSEO_LLM_Provider_Base {
 				'id'          => 'api_key',
 				'label'       => __( 'API Key', 'wpllmseo' ),
 				'type'        => 'password',
-				'required'    => true,
+				'required'    => false,
 				'description' => __( 'Get your API key from Anthropic Console', 'wpllmseo' ),
 				'link'        => 'https://console.anthropic.com/settings/keys',
 			),

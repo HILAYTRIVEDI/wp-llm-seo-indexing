@@ -218,34 +218,64 @@ class WPLLMSEO_Post_Panel {
 			wp_send_json_error( array( 'message' => __( 'Invalid post ID.', 'wpllmseo' ) ), 400 );
 		}
 
-		// Generate snippet immediately using bulk generator.
-		$result = WPLLMSEO_Bulk_Snippet_Generator::process_single_post( $post_id );
-		
-		if ( $result && isset( $result['success'] ) && $result['success'] ) {
-			// Queue for embedding indexing.
-			$queue = new WPLLMSEO_Queue();
-			$job_id = $queue->add( 'embed_snippet', array( 'snippet_id' => $result['snippet_id'] ) );
+		try {
+			// Generate snippet immediately using bulk generator.
+			$result = WPLLMSEO_Bulk_Snippet_Generator::process_single_post( $post_id );
 			
-			// Trigger worker to process immediately in background
-			if ( $job_id && function_exists( 'wp_schedule_single_event' ) ) {
-				wp_schedule_single_event( time(), 'wpllmseo_worker_event' );
-			}
-			
-			wp_send_json_success(
-				array(
-					'message' => __( 'Snippet generated successfully! Embedding will be created shortly.', 'wpllmseo' ),
-					'snippet' => array(
-						'id'   => $result['snippet_id'],
-						'text' => $result['snippet'],
+			if ( $result && isset( $result['success'] ) && $result['success'] ) {
+				// Queue for embedding indexing.
+				$queue = new WPLLMSEO_Queue();
+				$job_id = $queue->add( 'embed_snippet', array( 
+					'snippet_id' => $result['snippet_id'],
+					'post_id' => $post_id 
+				) );
+				
+				// Check for database errors
+				global $wpdb;
+				if ( ! $job_id && $wpdb->last_error ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf( 
+								__( 'Database error: %s', 'wpllmseo' ), 
+								$wpdb->last_error 
+							),
+						),
+						500
+					);
+				}
+				
+				// Trigger worker to process immediately in background
+				if ( $job_id && function_exists( 'wp_schedule_single_event' ) ) {
+					wp_schedule_single_event( time(), 'wpllmseo_worker_event' );
+				}
+				
+				wp_send_json_success(
+					array(
+						'message' => __( 'Snippet generated successfully! Embedding will be created shortly.', 'wpllmseo' ),
+						'snippet' => array(
+							'id'   => $result['snippet_id'],
+							'text' => $result['snippet'],
+						),
+					)
+				);
+			} else {
+				$error_message = isset( $result['error'] ) ? $result['error'] : __( 'Failed to generate snippet. Please check your API settings.', 'wpllmseo' );
+				wp_send_json_error(
+					array(
+						'message' => $error_message,
 					),
-				)
-			);
-		} else {
-			$error_message = isset( $result['error'] ) ? $result['error'] : __( 'Failed to generate snippet. Please check your API settings.', 'wpllmseo' );
+					500
+				);
+			}
+		} catch ( Exception $e ) {
 			wp_send_json_error(
 				array(
-					'message' => $error_message,
-				)
+					'message' => sprintf( 
+						__( 'Error: %s', 'wpllmseo' ), 
+						$e->getMessage() 
+					),
+				),
+				500
 			);
 		}
 	}

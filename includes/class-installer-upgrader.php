@@ -23,7 +23,7 @@ class WPLLMSEO_Installer_Upgrader {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.0.0';
+	const DB_VERSION = '1.1.1';
 
 	/**
 	 * Database version option key
@@ -132,6 +132,8 @@ class WPLLMSEO_Installer_Upgrader {
 		$jobs_sql   = "CREATE TABLE IF NOT EXISTS $jobs_table (
 			id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 			job_type VARCHAR(50) NOT NULL,
+			post_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			snippet_id BIGINT(20) UNSIGNED DEFAULT NULL,
 			payload LONGTEXT DEFAULT NULL,
 			status VARCHAR(20) DEFAULT 'queued',
 			attempts INT DEFAULT 0,
@@ -141,6 +143,8 @@ class WPLLMSEO_Installer_Upgrader {
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			INDEX idx_status (status),
 			INDEX idx_locked (locked),
+			INDEX idx_post_id (post_id),
+			INDEX idx_snippet_id (snippet_id),
 			INDEX idx_created (created_at)
 		) $charset_collate;";
 
@@ -168,6 +172,7 @@ class WPLLMSEO_Installer_Upgrader {
 		// Add missing columns if upgrading from older versions
 		$snippets_table = $wpdb->prefix . 'wpllmseo_snippets';
 		$chunks_table   = $wpdb->prefix . 'wpllmseo_chunks';
+		$jobs_table     = $wpdb->prefix . 'wpllmseo_jobs';
 
 		// Check if is_preferred column exists in snippets
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -187,6 +192,28 @@ class WPLLMSEO_Installer_Upgrader {
 		if ( empty( $column_exists ) ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN chunk_index INT DEFAULT 0 AFTER embedding" );
+		}
+
+		// Check if post_id column exists in jobs table (v1.1.1+)
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE 'post_id'" );
+		
+		if ( empty( $column_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN post_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER job_type" );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "ALTER TABLE $jobs_table ADD INDEX idx_post_id (post_id)" );
+		}
+
+		// Check if snippet_id column exists in jobs table (v1.1.1+)
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE 'snippet_id'" );
+		
+		if ( empty( $column_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN snippet_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER post_id" );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( "ALTER TABLE $jobs_table ADD INDEX idx_snippet_id (snippet_id)" );
 		}
 
 		// Add any future migrations here based on version comparisons

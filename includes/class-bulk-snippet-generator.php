@@ -239,9 +239,8 @@ class WPLLMSEO_Bulk_Snippet_Generator {
 		update_post_meta( $post_id, self::AI_SNIPPET_KEY, $snippet_text );
 		update_post_meta( $post_id, self::SNIPPET_TIMESTAMP_KEY, current_time( 'timestamp' ) );
 		
-		// Update content hash and last indexed timestamp
-		WPLLMSEO_Change_Tracker::update_content_hash( $post_id );
-		WPLLMSEO_Change_Tracker::update_last_indexed( $post_id );
+		// Update last indexed timestamp
+		update_post_meta( $post_id, '_wpllmseo_last_indexed', current_time( 'timestamp' ) );
 
 		return array(
 			'success'    => true,
