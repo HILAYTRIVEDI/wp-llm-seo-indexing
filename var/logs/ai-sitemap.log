@@ -35,3 +35,12 @@
 [2025-11-14 19:34:29] [INFO] AI Sitemap generation started | {"stream":false}
 [2025-11-14 19:34:29] [INFO] AI Sitemap generation completed (string) | {"posts":37,"size":23006,"execution_time":"24.28ms"}
 [2025-11-14 19:34:29] [INFO] Cache regenerated successfully | {"file_size":23006,"path":"/Users/hilaytrivedi/Local Sites/aeo/app/public/wp-content/plugins/wp-llm-seo-indexing/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 20:58:10] [INFO] Cache regeneration requested
+[2025-11-14 20:58:10] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 20:58:10] [INFO] AI Sitemap generation completed (string) | {"posts":38,"size":23649,"execution_time":"28.13ms"}
+[2025-11-14 20:58:10] [INFO] Cache regenerated successfully | {"file_size":23649,"path":"/Users/hilaytrivedi/Local Sites/aeo/app/public/wp-content/plugins/wp-llm-seo-indexing/var/cache/ai-sitemap.jsonl"}
+[2025-11-14 20:58:10] [INFO] Daily cron regeneration started
+[2025-11-14 20:58:10] [INFO] Cache regeneration requested
+[2025-11-14 20:58:10] [INFO] AI Sitemap generation started | {"stream":false}
+[2025-11-14 20:58:10] [INFO] AI Sitemap generation completed (string) | {"posts":38,"size":23649,"execution_time":"23.29ms"}
+[2025-11-14 20:58:10] [INFO] Cache regenerated successfully | {"file_size":23649,"path":"/Users/hilaytrivedi/Local Sites/aeo/app/public/wp-content/plugins/wp-llm-seo-indexing/var/cache/ai-sitemap.jsonl"}

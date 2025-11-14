@@ -353,7 +353,7 @@ class WPLLMSEO_Snippet_REST {
  * @return bool True if user can manage.
  */
 public function check_manage_permission( $request ) {
-	return WPLLMSEO_Capabilities::rest_permission_callback();
+	return current_user_can( 'manage_options' );
 }
 
 /**

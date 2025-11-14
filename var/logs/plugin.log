@@ -17,3 +17,6 @@
 [2025-11-14 20:15:08] [INFO] Snippet updated (ID: 4)
 [2025-11-14 20:21:57] [INFO] Snippet updated (ID: 4)
 [2025-11-14 20:24:17] [INFO] Snippet updated (ID: 4)
+[2025-11-14 20:58:10] [DEBUG] LLMs.txt cache flushed
+[2025-11-14 20:58:10] [INFO] MCP audit log table created
+[2025-11-14 20:58:10] [INFO] MCP tokens table created

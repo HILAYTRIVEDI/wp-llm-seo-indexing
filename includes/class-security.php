@@ -151,7 +151,7 @@ class WPLLMSEO_Security {
 	 * @return bool True if debug enabled.
 	 */
 	public static function is_debug_enabled() {
-		return ( isset( $_GET['debug'] ) && $_GET['debug'] === '1' && WPLLMSEO_Capabilities::user_can_manage() );
+		return ( isset( $_GET['debug'] ) && $_GET['debug'] === '1' && current_user_can( 'manage_options' ) );
 	}
 
 	/**

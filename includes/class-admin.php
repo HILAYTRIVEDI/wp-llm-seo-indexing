@@ -40,7 +40,7 @@ class WPLLMSEO_Admin {
 		}
 
 		// Check permissions
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Permission denied' ) );
 		}
 
@@ -232,7 +232,7 @@ class WPLLMSEO_Admin {
 		}
 
 		// Check user permissions.
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 
@@ -297,7 +297,7 @@ class WPLLMSEO_Admin {
 	 * Render dashboard screen.
 	 */
 	public static function render_dashboard() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		WPLLMSEO_Router::render( 'dashboard' );
@@ -307,7 +307,7 @@ class WPLLMSEO_Admin {
 	 * Render queue screen.
 	 */
 	public static function render_queue() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		WPLLMSEO_Router::render( 'queue' );
@@ -317,7 +317,7 @@ class WPLLMSEO_Admin {
 	 * Render snippets screen.
 	 */
 	public static function render_snippets() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		WPLLMSEO_Router::render( 'snippets' );
@@ -327,7 +327,7 @@ class WPLLMSEO_Admin {
 	 * Render logs screen.
 	 */
 	public static function render_logs() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		WPLLMSEO_Router::render( 'logs' );
@@ -337,7 +337,7 @@ class WPLLMSEO_Admin {
 	 * Render MCP integration screen.
 	 */
 	public static function render_mcp() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/mcp-settings.php';
@@ -347,7 +347,7 @@ class WPLLMSEO_Admin {
 	 * Render API providers screen (v1.2.0+).
 	 */
 	public static function render_providers() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 
@@ -395,7 +395,7 @@ class WPLLMSEO_Admin {
 	 * Render settings screen.
 	 */
 	public static function render_settings() {
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 		WPLLMSEO_Router::render( 'settings' );
@@ -406,7 +406,7 @@ class WPLLMSEO_Admin {
 	 */
 	public static function handle_log_download() {
 		// Check permissions
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to download logs.', 'wpllmseo' ) );
 		}
 

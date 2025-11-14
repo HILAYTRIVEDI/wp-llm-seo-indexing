@@ -208,7 +208,7 @@ class WPLLMSEO_Post_Panel {
 			);
 		}
 
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wpllmseo' ) ), 403 );
 		}
 

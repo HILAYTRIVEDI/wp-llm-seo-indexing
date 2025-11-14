@@ -74,7 +74,7 @@ class WPLLMSEO_Dashboard_REST {
 	 * @return bool True if user can manage plugin.
 	 */
 	public function check_permission() {
-		return WPLLMSEO_Capabilities::rest_permission_callback();
+		return current_user_can( 'manage_options' );
 	}	/**
 	 * Get dashboard stats
 	 *
@@ -106,6 +106,18 @@ class WPLLMSEO_Dashboard_REST {
 	 */
 	public function get_charts( $request ) {
 		$start_time = microtime( true );
+
+		// Check if dashboard instance exists
+		if ( ! $this->dashboard || ! method_exists( $this->dashboard, 'get_all_charts' ) ) {
+			return new WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => 'Dashboard not available',
+					'data'    => array(),
+				),
+				500
+			);
+		}
 
 		$charts = $this->dashboard->get_all_charts();
 

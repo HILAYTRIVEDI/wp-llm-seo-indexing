@@ -89,7 +89,7 @@ class WPLLMSEO_RAG_REST {
 	 */
 	public function check_query_permission( $request ) {
 		// Check rate limit for public requests.
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			if ( ! $this->check_rate_limit() ) {
 				return new WP_Error(
 					'rate_limit_exceeded',

@@ -48,7 +48,7 @@ class WPLLMSEO_Bulk_Snippet_Generator {
 	public static function ajax_start_bulk_job() {
 		check_ajax_referer( 'wp_rest', 'nonce' );
 
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Permission denied' ) );
 		}
 
@@ -77,7 +77,7 @@ class WPLLMSEO_Bulk_Snippet_Generator {
 	public static function ajax_get_job_status() {
 		check_ajax_referer( 'wp_rest', 'nonce' );
 
-		if ( ! WPLLMSEO_Capabilities::user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Permission denied' ) );
 		}
 

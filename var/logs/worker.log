@@ -91,3 +91,12 @@
 [2025-11-14 19:34:40] [INFO] Worker started (limit: 10) | {"limit":10}
 [2025-11-14 19:34:40] [INFO] No more jobs in queue
 [2025-11-14 19:34:40] [INFO] Worker finished (processed: 0, failed: 0) | {"processed":0,"failed":0}
+[2025-11-14 20:58:10] [INFO] Worker started (limit: 3) | {"limit":3}
+[2025-11-14 20:58:10] [INFO] No more jobs in queue
+[2025-11-14 20:58:10] [INFO] Worker finished (processed: 0, failed: 0) | {"processed":0,"failed":0}
+[2025-11-14 20:58:10] [INFO] Worker started (limit: 3) | {"limit":3}
+[2025-11-14 20:58:10] [INFO] No more jobs in queue
+[2025-11-14 20:58:10] [INFO] Worker finished (processed: 0, failed: 0) | {"processed":0,"failed":0}
+[2025-11-14 20:58:17] [INFO] Worker started (limit: 10) | {"limit":10}
+[2025-11-14 20:58:17] [INFO] No more jobs in queue
+[2025-11-14 20:58:17] [INFO] Worker finished (processed: 0, failed: 0) | {"processed":0,"failed":0}

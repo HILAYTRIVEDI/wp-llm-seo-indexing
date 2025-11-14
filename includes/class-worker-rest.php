@@ -167,6 +167,6 @@ class WPLLMSEO_Worker_REST {
 	 * @return bool True if user has permission.
 	 */
 	public function check_manage_permission() {
-		return WPLLMSEO_Capabilities::rest_permission_callback();
+		return current_user_can( 'manage_options' );
 	}
 }

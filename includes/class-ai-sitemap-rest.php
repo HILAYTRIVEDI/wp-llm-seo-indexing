@@ -252,7 +252,7 @@ class WPLLMSEO_AI_Sitemap_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'handle_regenerate' ),
-				'permission_callback' => array( 'WPLLMSEO_Capabilities', 'rest_permission_callback' ),
+				'permission_callback' => function() { return current_user_can( 'manage_options' ); },
 			)
 		);
 
@@ -262,7 +262,7 @@ class WPLLMSEO_AI_Sitemap_REST {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'handle_status' ),
-				'permission_callback' => array( 'WPLLMSEO_Capabilities', 'rest_permission_callback' ),
+				'permission_callback' => function() { return current_user_can( 'manage_options' ); },
 			)
 		);
 	}
