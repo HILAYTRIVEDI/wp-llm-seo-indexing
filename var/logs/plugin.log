@@ -20,3 +20,5 @@
 [2025-11-14 20:58:10] [DEBUG] LLMs.txt cache flushed
 [2025-11-14 20:58:10] [INFO] MCP audit log table created
 [2025-11-14 20:58:10] [INFO] MCP tokens table created
+[2025-11-14 21:52:31] [INFO] [GEMINI] Discovered 46 models
+[2025-11-14 21:52:31] [INFO] [GEMINI] Discovered 46 models

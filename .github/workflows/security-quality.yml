@@ -1,0 +1,234 @@
+name: Security & Quality Checks
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Scan for secrets
+        run: |
+          echo "🔍 Scanning for secrets..."
+          
+          # Define secret patterns
+          PATTERNS=(
+            "api[_-]?key\s*=\s*['\"][a-zA-Z0-9_-]{20,}['\"]"
+            "token\s*=\s*['\"][a-zA-Z0-9_-]{20,}['\"]"
+            "password\s*=\s*['\"][^'\"]{8,}['\"]"
+            "AIza[0-9A-Za-z\\-_]{35}"
+            "sk-[a-zA-Z0-9]{48}"
+            "sk-ant-[a-zA-Z0-9-]{95}"
+          )
+          
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -rE "$pattern" . --include="*.php" --include="*.js"; then
+              echo "❌ Secret pattern found: $pattern"
+              FOUND=1
+            fi
+          done
+          
+          if [ $FOUND -eq 1 ]; then
+            echo "❌ Secrets detected! Please remove them."
+            exit 1
+          fi
+          
+          echo "✅ No secrets detected"
+
+  php-lint:
+    name: PHP Linting & Standards
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2']
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, mysqli
+          tools: composer, phpcs, phpstan
+      
+      - name: Validate composer.json
+        if: hashFiles('composer.json') != ''
+        run: composer validate --strict
+      
+      - name: Install dependencies
+        if: hashFiles('composer.json') != ''
+        run: composer install --prefer-dist --no-progress
+      
+      - name: PHP Syntax Check
+        run: find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+      
+      - name: WordPress Coding Standards (PHPCS)
+        if: hashFiles('composer.json') != ''
+        run: |
+          if command -v phpcs &> /dev/null; then
+            vendor/bin/phpcs --standard=WordPress --extensions=php --ignore=vendor/ .
+          else
+            echo "⚠ PHPCS not available, skipping"
+          fi
+        continue-on-error: true
+      
+      - name: Static Analysis (PHPStan)
+        if: hashFiles('composer.json') != ''
+        run: |
+          if command -v phpstan &> /dev/null; then
+            vendor/bin/phpstan analyse includes --level=5 --memory-limit=1G
+          else
+            echo "⚠ PHPStan not available, skipping"
+          fi
+        continue-on-error: true
+
+  php-tests:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    
+    strategy:
+      matrix:
+        php-version: ['7.4', '8.0', '8.1']
+        wordpress-version: ['latest', '6.3', '6.4']
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, mysqli
+          coverage: none
+      
+      - name: Install WordPress Test Suite
+        run: |
+          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wordpress-version }}
+        if: hashFiles('bin/install-wp-tests.sh') != ''
+      
+      - name: Install Composer dependencies
+        if: hashFiles('composer.json') != ''
+        run: composer install --prefer-dist --no-progress
+      
+      - name: Run PHPUnit tests
+        if: hashFiles('phpunit.xml') != '' || hashFiles('phpunit.xml.dist') != ''
+        run: |
+          if [ -f "vendor/bin/phpunit" ]; then
+            vendor/bin/phpunit
+          else
+            echo "⚠ PHPUnit not configured, skipping"
+          fi
+        continue-on-error: true
+
+  javascript:
+    name: JavaScript Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Check for package.json
+        id: check-package
+        run: |
+          if [ -f "package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Install dependencies
+        if: steps.check-package.outputs.exists == 'true'
+        run: npm ci || npm install
+      
+      - name: Run ESLint
+        if: steps.check-package.outputs.exists == 'true'
+        run: |
+          if npm run lint --if-present; then
+            echo "✅ ESLint passed"
+          else
+            npx eslint admin/assets/js || echo "⚠ ESLint not configured"
+          fi
+        continue-on-error: true
+      
+      - name: Security Audit
+        if: steps.check-package.outputs.exists == 'true'
+        run: |
+          npm audit --audit-level=moderate || echo "⚠ Vulnerabilities found (non-blocking)"
+        continue-on-error: true
+
+  security-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Composer Security Audit
+        if: hashFiles('composer.lock') != ''
+        run: |
+          composer audit || echo "⚠ Composer audit found issues (non-blocking)"
+        continue-on-error: true
+      
+      - name: npm Security Audit
+        if: hashFiles('package-lock.json') != ''
+        run: |
+          npm audit --audit-level=high || echo "⚠ npm audit found issues (non-blocking)"
+        continue-on-error: true
+
+  wordpress-compatibility:
+    name: WordPress Plugin Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+      
+      - name: Check plugin headers
+        run: |
+          echo "Checking plugin headers..."
+          if ! grep -q "Plugin Name:" wp-llm-seo-indexing.php; then
+            echo "❌ Missing Plugin Name header"
+            exit 1
+          fi
+          echo "✅ Plugin headers valid"
+      
+      - name: Check text domain
+        run: |
+          echo "Checking text domain consistency..."
+          DOMAIN=$(grep "Text Domain:" wp-llm-seo-indexing.php | awk '{print $NF}')
+          echo "Found text domain: $DOMAIN"
+          # Check for hardcoded strings without text domain
+          if grep -r "__(" --include="*.php" | grep -v "$DOMAIN" | grep -v "//"; then
+            echo "⚠ Some strings may be missing text domain"
+          fi
