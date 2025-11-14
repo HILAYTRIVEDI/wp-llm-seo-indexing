@@ -1,0 +1,59 @@
+/**
+ * Semantic Linking Styles
+ * 
+ * @package WP_LLM_SEO_Indexing
+ */
+
+#wpllmseo-linking-panel {
+	font-size: 13px;
+}
+
+#wpllmseo-linking-spinner {
+	display: none;
+	margin: 10px 0;
+}
+
+#wpllmseo-suggestions-container {
+	display: none;
+	margin-top: 12px;
+}
+
+.wpllmseo-suggestion {
+	padding: 10px;
+	margin-bottom: 8px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+}
+
+.wpllmseo-suggestion-title {
+	font-weight: 600;
+	margin-bottom: 4px;
+	color: #1d2327;
+}
+
+.wpllmseo-suggestion-meta {
+	font-size: 11px;
+	color: #666;
+	margin-bottom: 6px;
+}
+
+.wpllmseo-suggestion-score {
+	display: inline-block;
+	padding: 2px 6px;
+	background: #007cba;
+	color: white;
+	border-radius: 2px;
+	font-weight: 600;
+}
+
+.wpllmseo-suggestion-actions {
+	margin-top: 6px;
+}
+
+.wpllmseo-suggestion-actions button {
+	font-size: 11px;
+	padding: 2px 8px;
+	height: auto;
+	line-height: 1.5;
+}

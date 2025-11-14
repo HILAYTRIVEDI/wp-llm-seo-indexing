@@ -1,0 +1,1714 @@
+/**
+ * WP LLM SEO & Indexing - Material UI Design System
+ * 
+ * Based on Material Design 3 principles with custom WordPress integration
+ */
+
+/* ================================================
+   CSS Variables - Material UI Color System
+   ================================================ */
+:root {
+	/* Primary - Indigo */
+	--mui-primary-main: #3f51b5;
+	--mui-primary-light: #757de8;
+	--mui-primary-dark: #002984;
+	--mui-primary-contrast: #ffffff;
+	
+	/* Secondary - Pink */
+	--mui-secondary-main: #f50057;
+	--mui-secondary-light: #ff5983;
+	--mui-secondary-dark: #bb002f;
+	
+	/* Success - Green */
+	--mui-success-main: #4caf50;
+	--mui-success-light: #80e27e;
+	--mui-success-dark: #087f23;
+	
+	/* Warning - Orange */
+	--mui-warning-main: #ff9800;
+	--mui-warning-light: #ffc947;
+	--mui-warning-dark: #c66900;
+	
+	/* Error - Red */
+	--mui-error-main: #f44336;
+	--mui-error-light: #ff7961;
+	--mui-error-dark: #ba000d;
+	
+	/* Info - Blue */
+	--mui-info-main: #2196f3;
+	--mui-info-light: #6ec6ff;
+	--mui-info-dark: #0069c0;
+	
+	/* Grey Scale */
+	--mui-grey-50: #fafafa;
+	--mui-grey-100: #f5f5f5;
+	--mui-grey-200: #eeeeee;
+	--mui-grey-300: #e0e0e0;
+	--mui-grey-400: #bdbdbd;
+	--mui-grey-500: #9e9e9e;
+	--mui-grey-600: #757575;
+	--mui-grey-700: #616161;
+	--mui-grey-800: #424242;
+	--mui-grey-900: #212121;
+	
+	/* Text Colors */
+	--mui-text-primary: rgba(0, 0, 0, 0.87);
+	--mui-text-secondary: rgba(0, 0, 0, 0.6);
+	--mui-text-disabled: rgba(0, 0, 0, 0.38);
+	
+	/* Background */
+	--mui-background-default: #fafafa;
+	--mui-background-paper: #ffffff;
+	
+	/* Elevation Shadows - Material Design */
+	--mui-shadow-1: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+	--mui-shadow-2: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+	--mui-shadow-3: 0px 3px 3px -2px rgba(0,0,0,0.2), 0px 3px 4px 0px rgba(0,0,0,0.14), 0px 1px 8px 0px rgba(0,0,0,0.12);
+	--mui-shadow-4: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+	--mui-shadow-6: 0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12);
+	--mui-shadow-8: 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12);
+	
+	/* Border Radius */
+	--mui-radius: 4px;
+	--mui-radius-sm: 2px;
+	--mui-radius-lg: 8px;
+	
+	/* Spacing - 8px base unit */
+	--mui-spacing-1: 8px;
+	--mui-spacing-2: 16px;
+	--mui-spacing-3: 24px;
+	--mui-spacing-4: 32px;
+	--mui-spacing-5: 40px;
+	--mui-spacing-6: 48px;
+	
+	/* Typography */
+	--mui-font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+	--mui-font-weight-light: 300;
+	--mui-font-weight-regular: 400;
+	--mui-font-weight-medium: 500;
+	--mui-font-weight-bold: 700;
+	
+	/* Legacy Color Variables (mapped to Material UI) */
+	--color-primary: var(--mui-primary-main);
+	--color-primary-dark: var(--mui-primary-dark);
+	--color-primary-light: var(--mui-primary-light);
+	--color-secondary: var(--mui-secondary-main);
+	--color-secondary-dark: var(--mui-secondary-dark);
+	--color-secondary-light: var(--mui-secondary-light);
+	--color-accent-orange: var(--mui-warning-main);
+	--color-accent-pink: var(--mui-error-main);
+	
+	/* Legacy Grey Scale */
+	--color-gray-50: var(--mui-grey-50);
+	--color-gray-100: var(--mui-grey-100);
+	--color-gray-200: var(--mui-grey-200);
+	--color-gray-300: var(--mui-grey-300);
+	--color-gray-400: var(--mui-grey-400);
+	--color-gray-500: var(--mui-grey-500);
+	--color-gray-600: var(--mui-grey-600);
+	--color-gray-700: var(--mui-grey-700);
+	--color-gray-800: var(--mui-grey-800);
+	--color-gray-900: var(--mui-grey-900);
+	
+	/* Legacy Spacing (mapped to Material UI) */
+	--spacing-xs: var(--mui-spacing-1);
+	--spacing-sm: var(--mui-spacing-1);
+	--spacing-md: var(--mui-spacing-2);
+	--spacing-lg: var(--mui-spacing-3);
+	--spacing-xl: var(--mui-spacing-4);
+	
+	/* Legacy Radius */
+	--radius-sm: var(--mui-radius-sm);
+	--radius-md: var(--mui-radius);
+	--radius-lg: var(--mui-radius-lg);
+	
+	/* Legacy Shadows */
+	--shadow-sm: var(--mui-shadow-2);
+	--shadow-md: var(--mui-shadow-4);
+	--shadow-lg: var(--mui-shadow-8);
+}
+
+/* ================================================
+   Base Layout
+   ================================================ */
+#wpbody-content .wrap {
+	background: var(--mui-background-default);
+	margin: 0 -20px 0 0;
+	padding: var(--mui-spacing-3);
+	min-height: calc(100vh - 32px);
+	font-family: var(--mui-font-family);
+}
+
+#wpbody-content {
+	padding-bottom: 0;
+}
+
+/* ================================================
+   Sidebar Navigation
+   ================================================ */
+.wpllmseo-container {
+	display: flex;
+	gap: var(--mui-spacing-3);
+	align-items: flex-start;
+}
+
+.wpllmseo-sidebar {
+	flex: 0 0 250px;
+	background-color: var(--mui-background-paper);
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	overflow: hidden;
+	position: sticky;
+	top: 32px;
+}
+
+.wpllmseo-sidebar-header {
+	padding: var(--mui-spacing-2);
+	background: linear-gradient(135deg, var(--mui-primary-main) 0%, var(--mui-primary-dark) 100%);
+	color: var(--mui-primary-contrast);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.wpllmseo-sidebar-header .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+
+.wpllmseo-sidebar-header h2 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-primary-contrast);
+	letter-spacing: 0.5px;
+}
+
+.wpllmseo-nav-menu {
+	list-style: none;
+	margin: 0;
+	padding: var(--mui-spacing-1) 0;
+}
+
+.wpllmseo-nav-menu li {
+	margin: 0;
+}
+
+.wpllmseo-nav-menu a {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px var(--mui-spacing-2);
+	color: var(--mui-text-primary);
+	text-decoration: none;
+	transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	font-size: 14px;
+	font-weight: var(--mui-font-weight-medium);
+	border-left: 3px solid transparent;
+}
+
+.wpllmseo-nav-menu a:hover {
+	background-color: var(--mui-grey-100);
+	color: var(--mui-primary-main);
+}
+
+.wpllmseo-nav-menu a .dashicons {
+	color: var(--mui-text-secondary);
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.wpllmseo-nav-menu a:hover .dashicons {
+	color: var(--mui-primary-main);
+}
+
+.wpllmseo-nav-menu li.active a {
+	background-color: var(--mui-primary-light);
+	background: linear-gradient(90deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.02) 100%);
+	color: var(--mui-primary-main);
+	border-left-color: var(--mui-primary-main);
+	font-weight: var(--mui-font-weight-bold);
+}
+
+.wpllmseo-nav-menu li.active a .dashicons {
+	color: var(--mui-primary-main);
+}
+
+.wpllmseo-main {
+	flex: 1;
+	min-width: 0;
+}
+
+/* Responsive Sidebar */
+@media screen and (max-width: 960px) {
+	.wpllmseo-container {
+		flex-direction: column;
+	}
+	
+	.wpllmseo-sidebar {
+		position: static;
+		width: 100%;
+		flex: 0 0 auto;
+	}
+	
+	.wpllmseo-nav-menu {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		padding: var(--mui-spacing-1);
+	}
+	
+	.wpllmseo-nav-menu li {
+		flex: 0 0 auto;
+	}
+	
+	.wpllmseo-nav-menu a {
+		padding: 8px 12px;
+		border-radius: var(--mui-radius);
+		border-left: none;
+		font-size: 13px;
+	}
+	
+	.wpllmseo-nav-menu li.active a {
+		background-color: var(--mui-primary-main);
+		color: var(--mui-primary-contrast);
+		border-left: none;
+	}
+	
+	.wpllmseo-nav-menu li.active a .dashicons {
+		color: var(--mui-primary-contrast);
+	}
+}
+
+/* ================================================
+   Typography - Material Design
+   ================================================ */
+.wrap h1 {
+	font-family: var(--mui-font-family);
+	font-size: 34px;
+	font-weight: var(--mui-font-weight-regular);
+	color: var(--mui-text-primary);
+	margin: 0 0 var(--mui-spacing-1) 0;
+	letter-spacing: 0.25px;
+	line-height: 1.235;
+}
+
+.wrap h1 + p {
+	font-size: 16px;
+	font-weight: var(--mui-font-weight-regular);
+	color: var(--mui-text-secondary);
+	margin: 0 0 var(--mui-spacing-3) 0;
+	line-height: 1.5;
+	letter-spacing: 0.15px;
+}
+
+/* ================================================
+   Material Buttons
+   ================================================ */
+.wrap .page-title-action,
+.wrap .button-primary {
+	background-color: var(--mui-primary-main);
+	border: none;
+	color: var(--mui-primary-contrast);
+	padding: 6px 16px;
+	border-radius: var(--mui-radius);
+	font-family: var(--mui-font-family);
+	font-weight: var(--mui-font-weight-medium);
+	font-size: 14px;
+	line-height: 1.75;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	box-shadow: var(--mui-shadow-2);
+	cursor: pointer;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wrap .page-title-action:hover,
+.wrap .page-title-action:focus,
+.wrap .button-primary:hover,
+.wrap .button-primary:focus {
+	background-color: var(--mui-primary-dark);
+	box-shadow: var(--mui-shadow-4);
+	text-decoration: none;
+}
+
+.wrap .page-title-action:active,
+.wrap .button-primary:active {
+	box-shadow: var(--mui-shadow-8);
+}
+
+.wrap .page-title-action:disabled,
+.wrap .button-primary:disabled {
+	background-color: var(--mui-text-disabled);
+	box-shadow: none;
+	cursor: not-allowed;
+}
+
+.wrap .button-secondary {
+	background-color: transparent;
+	border: 1px solid var(--mui-grey-400);
+	color: var(--mui-text-primary);
+	padding: 5px 15px;
+	border-radius: var(--mui-radius);
+	font-family: var(--mui-font-family);
+	font-weight: var(--mui-font-weight-medium);
+	font-size: 14px;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wrap .button-secondary:hover {
+	background-color: var(--mui-grey-100);
+	border-color: var(--mui-grey-600);
+}
+
+.wrap .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+}
+
+.dashicons-spin {
+	animation: dashicons-spin 1s linear infinite;
+}
+
+@keyframes dashicons-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+.wrap hr.wp-header-end {
+	display: none;
+}
+
+/* ================================================
+   Material UI Stats Grid
+   ================================================ */
+.wpllmseo-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: var(--mui-spacing-2);
+	margin-bottom: var(--mui-spacing-3);
+}
+
+/* ================================================
+   Material UI Cards (Paper)
+   ================================================ */
+.wpllmseo-card {
+	background-color: var(--mui-background-paper);
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	overflow: hidden;
+	transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.wpllmseo-card:hover {
+	box-shadow: var(--mui-shadow-4);
+}
+
+.wpllmseo-card-header {
+	padding: var(--mui-spacing-2);
+	border-bottom: 1px solid var(--mui-grey-200);
+}
+
+.wpllmseo-card-title {
+	font-family: var(--mui-font-family);
+	font-size: 20px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	margin: 0;
+	letter-spacing: 0.15px;
+	line-height: 1.6;
+}
+
+.wpllmseo-card-body {
+	padding: var(--mui-spacing-2);
+}
+
+/* Stat Cards */
+.wpllmseo-card .wpllmseo-stat-content {
+	display: flex;
+	align-items: center;
+	gap: var(--mui-spacing-2);
+	padding: var(--mui-spacing-2);
+}
+
+.wpllmseo-card .wpllmseo-stat-icon {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	background-color: var(--mui-primary-main);
+	color: var(--mui-primary-contrast);
+}
+
+.wpllmseo-card .wpllmseo-stat-icon .dashicons {
+	width: 28px;
+	height: 28px;
+	font-size: 28px;
+}
+
+.wpllmseo-card .wpllmseo-stat-details {
+	flex: 1;
+	min-width: 0;
+}
+
+.wpllmseo-card .wpllmseo-stat-label {
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-secondary);
+	margin: 0 0 4px 0;
+	letter-spacing: 0.15px;
+	text-transform: uppercase;
+}
+
+.wpllmseo-card .wpllmseo-stat-value {
+	font-family: var(--mui-font-family);
+	font-size: 32px;
+	font-weight: var(--mui-font-weight-regular);
+	color: var(--mui-text-primary);
+	margin: 0;
+	line-height: 1.2;
+	letter-spacing: -0.5px;
+}
+
+.wpllmseo-card .wpllmseo-stat-trend {
+	font-size: 12px;
+	color: var(--mui-text-secondary);
+	margin-top: 4px;
+	letter-spacing: 0.4px;
+}
+
+/* Color variants for stat icons */
+.wpllmseo-card.wpllmseo-card-success .wpllmseo-stat-icon {
+	background-color: var(--mui-success-main);
+}
+
+.wpllmseo-card.wpllmseo-card-warning .wpllmseo-stat-icon {
+	background-color: var(--mui-warning-main);
+}
+
+.wpllmseo-card.wpllmseo-card-error .wpllmseo-stat-icon {
+	background-color: var(--mui-error-main);
+}
+
+.wpllmseo-card.wpllmseo-card-info .wpllmseo-stat-icon {
+	background-color: var(--mui-info-main);
+}
+
+.wpllmseo-card.wpllmseo-card-secondary .wpllmseo-stat-icon {
+	background-color: var(--mui-secondary-main);
+}
+
+/* ================================================
+   Charts Section
+   ================================================ */
+.wpllmseo-charts-section {
+	margin-top: var(--mui-spacing-3);
+}
+
+.wpllmseo-charts-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+	gap: var(--mui-spacing-2);
+}
+
+.wpllmseo-chart-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--mui-spacing-4);
+	color: var(--mui-text-secondary);
+}
+
+.wpllmseo-chart-loading p {
+	margin-top: var(--mui-spacing-1);
+	font-size: 14px;
+}
+
+/* ================================================
+   Recent Activity List
+   ================================================ */
+.wpllmseo-recent-activity {
+	margin-top: var(--mui-spacing-3);
+}
+
+.wpllmseo-activity-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.wpllmseo-activity-list li {
+	display: flex;
+	align-items: center;
+	gap: var(--mui-spacing-2);
+	padding: var(--mui-spacing-2);
+	border-bottom: 1px solid var(--mui-grey-200);
+	font-family: var(--mui-font-family);
+}
+
+.wpllmseo-activity-list li:last-child {
+	border-bottom: none;
+}
+
+.wpllmseo-activity-list li .dashicons {
+	color: var(--mui-primary-main);
+	flex-shrink: 0;
+}
+
+.wpllmseo-activity-list li span {
+	flex: 1;
+	font-size: 14px;
+	color: var(--mui-text-primary);
+	letter-spacing: 0.15px;
+}
+
+.wpllmseo-activity-list li time {
+	font-size: 12px;
+	color: var(--mui-text-secondary);
+	letter-spacing: 0.4px;
+}
+
+/* ================================================
+   Material UI Tables
+   ================================================ */
+.wpllmseo-table {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--mui-background-paper);
+	box-shadow: var(--mui-shadow-2);
+	border-radius: var(--mui-radius);
+	overflow: hidden;
+}
+
+.wpllmseo-table thead {
+	background-color: var(--mui-grey-100);
+}
+
+.wpllmseo-table th {
+	padding: 16px;
+	text-align: left;
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	letter-spacing: 0.15px;
+	border-bottom: 1px solid var(--mui-grey-300);
+}
+
+.wpllmseo-table td {
+	padding: 16px;
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	color: var(--mui-text-primary);
+	border-bottom: 1px solid var(--mui-grey-200);
+	letter-spacing: 0.15px;
+}
+
+.wpllmseo-table tbody tr:hover {
+	background-color: var(--mui-grey-50);
+}
+
+.wpllmseo-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* ================================================
+   Material UI Badges/Chips
+   ================================================ */
+.wpllmseo-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 16px;
+	font-family: var(--mui-font-family);
+	font-size: 13px;
+	font-weight: var(--mui-font-weight-medium);
+	letter-spacing: 0.16px;
+}
+
+.wpllmseo-badge-success {
+	background-color: rgba(76, 175, 80, 0.12);
+	color: var(--mui-success-dark);
+}
+
+.wpllmseo-badge-warning {
+	background-color: rgba(255, 152, 0, 0.12);
+	color: var(--mui-warning-dark);
+}
+
+.wpllmseo-badge-error {
+	background-color: rgba(244, 67, 54, 0.12);
+	color: var(--mui-error-dark);
+}
+
+.wpllmseo-badge-info {
+	background-color: rgba(33, 150, 243, 0.12);
+	color: var(--mui-info-dark);
+}
+
+.wpllmseo-badge-default {
+	background-color: var(--mui-grey-200);
+	color: var(--mui-text-primary);
+}
+
+/* ================================================
+   Material UI Notices
+   ================================================ */
+.notice {
+	background-color: var(--mui-background-paper);
+	border-left: 4px solid var(--mui-info-main);
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	margin: var(--mui-spacing-2) 0;
+	padding: var(--mui-spacing-2);
+}
+
+.notice-success {
+	border-left-color: var(--mui-success-main);
+}
+
+.notice-warning {
+	border-left-color: var(--mui-warning-main);
+}
+
+.notice-error {
+	border-left-color: var(--mui-error-main);
+}
+
+.notice-info {
+	border-left-color: var(--mui-info-main);
+}
+
+/* ================================================
+   Responsive Design - Material UI Breakpoints
+   ================================================ */
+
+/* Tablet and below (960px) */
+@media screen and (max-width: 960px) {
+	.wpllmseo-stats-grid {
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	}
+	
+	.wpllmseo-charts-grid {
+		grid-template-columns: 1fr;
+	}
+	
+	.wrap h1 {
+		font-size: 28px;
+	}
+}
+
+/* Mobile (600px) */
+@media screen and (max-width: 600px) {
+	#wpbody-content .wrap {
+		padding: var(--mui-spacing-2);
+	}
+	
+	.wpllmseo-stats-grid {
+		grid-template-columns: 1fr;
+		gap: var(--mui-spacing-1);
+	}
+	
+	.wrap h1 {
+		font-size: 24px;
+	}
+	
+	.wrap h1 + p {
+		font-size: 14px;
+	}
+	
+	.wpllmseo-card .wpllmseo-stat-content {
+		flex-direction: row;
+	}
+	
+	.wpllmseo-card .wpllmseo-stat-icon {
+		width: 48px;
+		height: 48px;
+	}
+	
+	.wpllmseo-card .wpllmseo-stat-value {
+		font-size: 24px;
+	}
+}
+
+/* ================================================
+   Material UI Animations
+   ================================================ */
+@keyframes mui-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.wpllmseo-card {
+	animation: mui-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.wpllmseo-card:nth-child(1) { animation-delay: 0ms; }
+.wpllmseo-card:nth-child(2) { animation-delay: 50ms; }
+.wpllmseo-card:nth-child(3) { animation-delay: 100ms; }
+.wpllmseo-card:nth-child(4) { animation-delay: 150ms; }
+.wpllmseo-card:nth-child(5) { animation-delay: 200ms; }
+.wpllmseo-card:nth-child(6) { animation-delay: 250ms; }
+
+/* ================================================
+   Material UI Form Controls
+   ================================================ */
+.wpllmseo-form-control {
+	margin-bottom: var(--mui-spacing-3);
+}
+
+.wpllmseo-form-label {
+	display: block;
+	font-family: var(--mui-font-family);
+	font-size: 12px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-secondary);
+	margin-bottom: var(--mui-spacing-1);
+	letter-spacing: 0.15px;
+	text-transform: uppercase;
+}
+
+.wpllmseo-text-field {
+	width: 100%;
+	padding: 12px 16px;
+	font-family: var(--mui-font-family);
+	font-size: 16px;
+	color: var(--mui-text-primary);
+	background-color: transparent;
+	border: 1px solid var(--mui-grey-400);
+	border-radius: var(--mui-radius);
+	transition: border-color 200ms cubic-bezier(0.0, 0, 0.2, 1) 0ms;
+}
+
+.wpllmseo-text-field:hover {
+	border-color: var(--mui-grey-600);
+}
+
+.wpllmseo-text-field:focus {
+	outline: none;
+	border-color: var(--mui-primary-main);
+	border-width: 2px;
+	padding: 11px 15px; /* Compensate for border width */
+}
+
+.wpllmseo-text-field:disabled {
+	background-color: var(--mui-grey-100);
+	color: var(--mui-text-disabled);
+	cursor: not-allowed;
+}
+
+/* ================================================
+   Material UI Progress Indicators
+   ================================================ */
+.wpllmseo-linear-progress {
+	height: 4px;
+	background-color: rgba(63, 81, 181, 0.2);
+	border-radius: 2px;
+	overflow: hidden;
+	position: relative;
+}
+
+.wpllmseo-linear-progress-bar {
+	height: 100%;
+	background-color: var(--mui-primary-main);
+	border-radius: 2px;
+	transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+/* ================================================
+   Material UI Dividers
+   ================================================ */
+.wpllmseo-divider {
+	border: none;
+	border-top: 1px solid var(--mui-grey-200);
+	margin: var(--mui-spacing-3) 0;
+}
+
+/* ================================================
+   Material UI Tooltips (Title attributes)
+   ================================================ */
+[title] {
+	position: relative;
+	cursor: help;
+}
+
+/* ================================================
+   Queue Stats
+   ================================================ */
+.wpllmseo-queue-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: var(--mui-spacing-2);
+	margin-bottom: var(--mui-spacing-3);
+}
+
+.wpllmseo-stat-item {
+	background-color: var(--mui-background-paper);
+	padding: var(--mui-spacing-2);
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	text-align: center;
+	transition: box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.wpllmseo-stat-item:hover {
+	box-shadow: var(--mui-shadow-4);
+}
+
+.wpllmseo-stat-item .wpllmseo-stat-value {
+	font-family: var(--mui-font-family);
+	font-size: 32px;
+	font-weight: var(--mui-font-weight-regular);
+	color: var(--mui-primary-main);
+	display: block;
+	margin-bottom: var(--mui-spacing-1);
+}
+
+.wpllmseo-stat-item .wpllmseo-stat-label {
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* ================================================
+   WordPress Admin Table Overrides
+   ================================================ */
+.wp-list-table {
+	background-color: var(--mui-background-paper);
+	border: none;
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	overflow: hidden;
+}
+
+.wp-list-table th {
+	background-color: var(--mui-grey-100);
+	font-family: var(--mui-font-family);
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	border-bottom: 1px solid var(--mui-grey-300);
+}
+
+.wp-list-table td {
+	font-family: var(--mui-font-family);
+	color: var(--mui-text-primary);
+	border-bottom: 1px solid var(--mui-grey-200);
+}
+
+.wp-list-table tbody tr:hover {
+	background-color: var(--mui-grey-50);
+}
+
+/* ================================================
+   Material UI Elevation Utilities
+   ================================================ */
+.mui-elevation-0 { box-shadow: none; }
+.mui-elevation-1 { box-shadow: var(--mui-shadow-1); }
+.mui-elevation-2 { box-shadow: var(--mui-shadow-2); }
+.mui-elevation-3 { box-shadow: var(--mui-shadow-3); }
+.mui-elevation-4 { box-shadow: var(--mui-shadow-4); }
+.mui-elevation-6 { box-shadow: var(--mui-shadow-6); }
+.mui-elevation-8 { box-shadow: var(--mui-shadow-8); }
+
+/* ================================================
+   Accessibility - Focus Indicators
+   ================================================ */
+*:focus-visible {
+	outline: 2px solid var(--mui-primary-main);
+	outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+	outline: 2px solid var(--mui-primary-main);
+	outline-offset: 2px;
+}
+
+/* ================================================
+   Print Styles
+   ================================================ */
+@media print {
+	.wpllmseo-card {
+		box-shadow: none;
+		border: 1px solid var(--mui-grey-300);
+		page-break-inside: avoid;
+	}
+	
+	.wrap .button-primary,
+	.wrap .button-secondary {
+		display: none;
+	}
+}
+
+/* ================================================
+   Settings Page Styling
+   ================================================ */
+.wpllmseo-settings {
+	max-width: 1200px;
+}
+
+.wpllmseo-settings-section {
+	background: var(--mui-background-paper);
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	padding: var(--mui-spacing-3);
+	margin-bottom: var(--mui-spacing-3);
+	border-left: 4px solid var(--mui-primary-main);
+	transition: box-shadow 0.2s ease;
+}
+
+.wpllmseo-settings-section:hover {
+	box-shadow: var(--mui-shadow-4);
+}
+
+.wpllmseo-settings-section h2 {
+	font-family: var(--mui-font-family);
+	font-size: 20px;
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	margin: 0 0 var(--mui-spacing-1) 0;
+	padding: 0;
+	border: none;
+}
+
+.wpllmseo-settings-section > p.description {
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	color: var(--mui-text-secondary);
+	margin: 0 0 var(--mui-spacing-3) 0;
+	line-height: 1.5;
+}
+
+.wpllmseo-settings-section .form-table {
+	margin: 0;
+	background: transparent;
+}
+
+.wpllmseo-settings-section .form-table th {
+	font-family: var(--mui-font-family);
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	padding: var(--mui-spacing-2) 0;
+	width: 200px;
+}
+
+.wpllmseo-settings-section .form-table td {
+	font-family: var(--mui-font-family);
+	padding: var(--mui-spacing-2) 0;
+	color: var(--mui-text-primary);
+}
+
+.wpllmseo-settings-section .form-table tr {
+	border-bottom: 1px solid var(--mui-grey-200);
+}
+
+.wpllmseo-settings-section .form-table tr:last-child {
+	border-bottom: none;
+}
+
+.wpllmseo-settings-section input[type="text"],
+.wpllmseo-settings-section input[type="password"],
+.wpllmseo-settings-section input[type="number"],
+.wpllmseo-settings-section select {
+	font-family: var(--mui-font-family);
+	border: 1px solid var(--mui-grey-400);
+	border-radius: var(--mui-radius);
+	padding: 8px 12px;
+	font-size: 14px;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wpllmseo-settings-section input[type="text"]:focus,
+.wpllmseo-settings-section input[type="password"]:focus,
+.wpllmseo-settings-section input[type="number"]:focus,
+.wpllmseo-settings-section select:focus {
+	border-color: var(--mui-primary-main);
+	box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
+	outline: none;
+}
+
+.wpllmseo-settings-section input[type="checkbox"] {
+	margin-right: 8px;
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+}
+
+.wpllmseo-settings-section label {
+	font-family: var(--mui-font-family);
+	font-size: 14px;
+	color: var(--mui-text-primary);
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+}
+
+.wpllmseo-settings-section .description {
+	font-family: var(--mui-font-family);
+	font-size: 13px;
+	color: var(--mui-text-secondary);
+	margin-top: var(--mui-spacing-1);
+	line-height: 1.5;
+}
+
+.wpllmseo-settings-section .description code {
+	background: var(--mui-grey-100);
+	padding: 2px 6px;
+	border-radius: var(--mui-radius-sm);
+	font-size: 12px;
+	color: var(--mui-error-main);
+}
+
+.wpllmseo-settings-form .submit {
+	margin: 0;
+	padding: 0;
+}
+
+/* System Information Table */
+.wpllmseo-settings .widefat {
+	background: var(--mui-background-paper);
+	border: none;
+	border-radius: var(--mui-radius);
+	box-shadow: var(--mui-shadow-2);
+	overflow: hidden;
+}
+
+.wpllmseo-settings .widefat th {
+	background: var(--mui-grey-100);
+	font-family: var(--mui-font-family);
+	font-weight: var(--mui-font-weight-medium);
+	color: var(--mui-text-primary);
+	padding: var(--mui-spacing-2);
+	width: 220px;
+}
+
+.wpllmseo-settings .widefat td {
+	font-family: var(--mui-font-family);
+	color: var(--mui-text-primary);
+	padding: var(--mui-spacing-2);
+}
+
+.wpllmseo-settings .widefat td code {
+	background: var(--mui-grey-100);
+	padding: 4px 8px;
+	border-radius: var(--mui-radius-sm);
+	font-size: 13px;
+	color: var(--mui-text-primary);
+}
+
+/* Override WordPress postbox completely */
+.wpllmseo-stat-card.postbox {
+	background: #fff;
+	border: none;
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+	position: relative;
+}
+
+.wpllmseo-stat-card.postbox::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.wpllmseo-stat-card.postbox:hover {
+	box-shadow: var(--shadow-lg);
+	transform: translateY(-4px);
+}
+
+.wpllmseo-stat-card.postbox:hover::before {
+	opacity: 1;
+}
+
+.wpllmseo-stat-card .postbox-header {
+	border-bottom: 1px solid var(--color-gray-100);
+	padding: var(--spacing-lg);
+	background: transparent;
+	border-radius: 0;
+	cursor: default;
+}
+
+.wpllmseo-stat-card .postbox-header .hndle {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-gray-500);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	cursor: default;
+}
+
+.wpllmseo-stat-card .postbox-header button.handlediv {
+	display: none;
+}
+
+.wpllmseo-stat-card .postbox-header .dashicons {
+	width: 44px;
+	height: 44px;
+	font-size: 22px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: var(--shadow-sm);
+}
+
+/* Gradient icon backgrounds */
+.wpllmseo-stat-card .dashicons-dashboard {
+	background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+	color: #fff;
+}
+
+.wpllmseo-stat-card .dashicons-update {
+	background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
+	color: #fff;
+}
+
+.wpllmseo-stat-card .dashicons-media-code {
+	background: linear-gradient(135deg, var(--color-accent-orange) 0%, #ea580c 100%);
+	color: #fff;
+}
+
+.wpllmseo-stat-card .dashicons-chart-line {
+	background: linear-gradient(135deg, var(--color-accent-pink) 0%, #db2777 100%);
+	color: #fff;
+}
+
+.wpllmseo-stat-card .inside {
+	padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl);
+}
+
+.wpllmseo-stat-value {
+	font-size: 40px;
+	font-weight: 700;
+	line-height: 1;
+	margin: 0 0 var(--spacing-xs) 0;
+	color: var(--color-gray-900);
+	letter-spacing: -0.03em;
+}
+
+.wpllmseo-stat-trend {
+	font-size: 14px;
+	margin-top: var(--spacing-sm);
+	color: var(--color-gray-500);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 500;
+}
+
+.wpllmseo-stat-trend a {
+	color: var(--color-primary);
+	text-decoration: none;
+	font-weight: 600;
+	transition: color 0.2s;
+}
+
+.wpllmseo-stat-trend a:hover {
+	color: var(--color-primary-dark);
+	text-decoration: none;
+}
+
+/* ================================================
+   Modern Content Cards
+   ================================================ */
+.wrap .postbox {
+	background: #fff;
+	border: none;
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+	margin-bottom: var(--spacing-lg);
+	transition: box-shadow 0.2s ease;
+}
+
+.wrap .postbox:hover {
+	box-shadow: var(--shadow-md);
+}
+
+.wrap .postbox .postbox-header {
+	border-bottom: 1px solid var(--color-gray-100);
+	border-radius: var(--radius-md) var(--radius-md) 0 0;
+	padding: var(--spacing-lg) var(--spacing-xl);
+	background: transparent;
+}
+
+.wrap .postbox .postbox-header .hndle {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--color-gray-900);
+	cursor: default;
+}
+
+.wrap .postbox .postbox-header button.handlediv {
+	display: none;
+}
+
+.wrap .postbox .inside {
+	padding: var(--spacing-xl);
+}
+
+/* ================================================
+   Enhanced Chart Container
+   ================================================ */
+.wpllmseo-charts-section {
+	margin-top: var(--spacing-lg);
+}
+
+.wpllmseo-chart-container {
+	position: relative;
+	width: 100%;
+	min-height: 350px;
+	padding: var(--spacing-xl);
+	background: linear-gradient(to bottom, var(--color-gray-50) 0%, #ffffff 100%);
+	border-radius: var(--radius-sm);
+}
+
+/* ================================================
+   Modern Log Viewer
+   ================================================ */
+.wpllmseo-log-content {
+	max-height: 500px;
+	overflow-y: auto;
+	border: 1px solid var(--color-gray-200);
+	border-radius: var(--radius-sm);
+	background: var(--color-gray-50);
+}
+
+.wpllmseo-log-content::-webkit-scrollbar {
+	width: 8px;
+}
+
+.wpllmseo-log-content::-webkit-scrollbar-track {
+	background: var(--color-gray-100);
+	border-radius: 4px;
+}
+
+.wpllmseo-log-content::-webkit-scrollbar-thumb {
+	background: var(--color-gray-300);
+	border-radius: 4px;
+}
+
+.wpllmseo-log-content::-webkit-scrollbar-thumb:hover {
+	background: var(--color-gray-400);
+}
+
+.wpllmseo-log-pre {
+	margin: 0;
+	padding: var(--spacing-md);
+	font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+	font-size: 13px;
+	line-height: 1.7;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	color: var(--color-gray-700);
+}
+
+/* ================================================
+   Modern Forms & Inputs
+   ================================================ */
+.wrap .form-table {
+	background: transparent;
+}
+
+.wrap .form-table th {
+	padding: var(--spacing-md) var(--spacing-lg);
+	font-weight: 600;
+	color: var(--color-gray-700);
+	font-size: 14px;
+}
+
+.wrap .form-table td {
+	padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.wrap input[type="text"],
+.wrap input[type="email"],
+.wrap input[type="number"],
+.wrap input[type="password"],
+.wrap select,
+.wrap textarea {
+	border: 1px solid var(--color-gray-300);
+	border-radius: var(--radius-sm);
+	padding: 10px 14px;
+	font-size: 14px;
+	transition: all 0.2s ease;
+	background: #fff;
+	color: var(--color-gray-900);
+}
+
+.wrap input[type="text"]:focus,
+.wrap input[type="email"]:focus,
+.wrap input[type="number"]:focus,
+.wrap input[type="password"]:focus,
+.wrap select:focus,
+.wrap textarea:focus {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+	outline: none;
+}
+
+.wrap .button-primary {
+	background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+	border: none;
+	color: #fff;
+	padding: 10px 20px;
+	border-radius: var(--radius-sm);
+	font-weight: 600;
+	font-size: 14px;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+	text-shadow: none;
+}
+
+.wrap .button-primary:hover,
+.wrap .button-primary:focus {
+	background: linear-gradient(135deg, var(--color-primary-dark) 0%, #5b21b6 100%);
+	box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+	transform: translateY(-1px);
+	color: #fff;
+	border: none;
+}
+
+.wrap .button-primary:active {
+	transform: translateY(0);
+	box-shadow: 0 1px 2px rgba(139, 92, 246, 0.2);
+}
+
+.wrap .button-secondary {
+	background: #fff;
+	border: 1px solid var(--color-gray-300);
+	color: var(--color-gray-700);
+	padding: 10px 20px;
+	border-radius: var(--radius-sm);
+	font-weight: 600;
+	font-size: 14px;
+	transition: all 0.2s ease;
+	box-shadow: var(--shadow-sm);
+}
+
+.wrap .button-secondary:hover,
+.wrap .button-secondary:focus {
+	background: var(--color-gray-50);
+	border-color: var(--color-gray-400);
+	color: var(--color-gray-900);
+	box-shadow: var(--shadow-md);
+}
+
+/* ================================================
+   Modern Tables
+   ================================================ */
+.wrap .wp-list-table {
+	background: #fff;
+	border: none;
+	border-radius: var(--radius-md);
+	overflow: hidden;
+	box-shadow: var(--shadow-sm);
+}
+
+.wrap .wp-list-table thead th {
+	background: var(--color-gray-50);
+	border-bottom: 2px solid var(--color-gray-200);
+	padding: var(--spacing-md) var(--spacing-lg);
+	font-weight: 700;
+	color: var(--color-gray-900);
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.wrap .wp-list-table tbody tr {
+	border-bottom: 1px solid var(--color-gray-100);
+	transition: background-color 0.15s ease;
+}
+
+.wrap .wp-list-table tbody tr:hover {
+	background: var(--color-gray-50);
+}
+
+.wrap .wp-list-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.wrap .wp-list-table tbody td {
+	padding: var(--spacing-md) var(--spacing-lg);
+	color: var(--color-gray-700);
+	font-size: 14px;
+}
+
+.wrap .wp-list-table .column-cb input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+/* ================================================
+   Modern Notices
+   ================================================ */
+.wrap .notice {
+	border-left: 4px solid var(--color-info);
+	border-radius: var(--radius-sm);
+	padding: var(--spacing-md) var(--spacing-lg);
+	margin: 0 0 var(--spacing-lg) 0;
+	background: #fff;
+	box-shadow: var(--shadow-sm);
+}
+
+.wrap .notice.notice-success {
+	border-left-color: var(--color-success);
+	background: linear-gradient(to right, rgba(16, 185, 129, 0.05) 0%, #fff 100%);
+}
+
+.wrap .notice.notice-warning {
+	border-left-color: var(--color-warning);
+	background: linear-gradient(to right, rgba(245, 158, 11, 0.05) 0%, #fff 100%);
+}
+
+.wrap .notice.notice-error {
+	border-left-color: var(--color-error);
+	background: linear-gradient(to right, rgba(239, 68, 68, 0.05) 0%, #fff 100%);
+}
+
+.wrap .notice.notice-info {
+	border-left-color: var(--color-info);
+	background: linear-gradient(to right, rgba(59, 130, 246, 0.05) 0%, #fff 100%);
+}
+
+.wrap .notice p {
+	margin: 0.5em 0;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.wrap .notice .notice-dismiss {
+	top: 50%;
+	transform: translateY(-50%);
+	right: var(--spacing-md);
+	transition: opacity 0.2s ease;
+}
+
+.wrap .notice .notice-dismiss:before {
+	color: var(--color-gray-400);
+	font-size: 18px;
+	transition: color 0.2s ease;
+}
+
+.wrap .notice .notice-dismiss:hover:before {
+	color: var(--color-gray-600);
+}
+
+/* Notice animations */
+.wrap .notice {
+	animation: slideInDown 0.3s ease-out;
+	transition: opacity 0.3s ease;
+}
+
+@keyframes slideInDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ================================================
+   Badge & Status Indicators
+   ================================================ */
+.wpllmseo-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.wpllmseo-badge.success {
+	background: rgba(16, 185, 129, 0.1);
+	color: var(--color-success);
+}
+
+.wpllmseo-badge.warning {
+	background: rgba(245, 158, 11, 0.1);
+	color: var(--color-warning);
+}
+
+.wpllmseo-badge.error {
+	background: rgba(239, 68, 68, 0.1);
+	color: var(--color-error);
+}
+
+.wpllmseo-badge.info {
+	background: rgba(59, 130, 246, 0.1);
+	color: var(--color-info);
+}
+
+/* ================================================
+   Loading States
+   ================================================ */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -1000px 0;
+	}
+	100% {
+		background-position: 1000px 0;
+	}
+}
+
+.wpllmseo-stat-card {
+	animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.wpllmseo-stat-card:nth-child(1) { animation-delay: 0.1s; }
+.wpllmseo-stat-card:nth-child(2) { animation-delay: 0.15s; }
+.wpllmseo-stat-card:nth-child(3) { animation-delay: 0.2s; }
+.wpllmseo-stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+.wpllmseo-skeleton {
+	background: linear-gradient(90deg, var(--color-gray-100) 0%, var(--color-gray-200) 50%, var(--color-gray-100) 100%);
+	background-size: 1000px 100%;
+	animation: shimmer 2s infinite;
+	border-radius: var(--radius-sm);
+}
+
+/* ================================================
+   Responsive Design
+   ================================================ */
+@media screen and (max-width: 1280px) {
+	.wpllmseo-stats-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media screen and (max-width: 782px) {
+	#wpbody-content .wrap {
+		padding: var(--spacing-lg);
+		margin: 0;
+	}
+	
+	.wpllmseo-stats-grid {
+		grid-template-columns: 1fr;
+		gap: var(--spacing-md);
+	}
+	
+	.wrap h1 {
+		font-size: 26px;
+	}
+	
+	.wpllmseo-stat-value {
+		font-size: 32px;
+	}
+	
+	.wrap .postbox .postbox-header,
+	.wrap .postbox .inside {
+		padding: var(--spacing-md);
+	}
+	
+	.wpllmseo-stat-card .postbox-header,
+	.wpllmseo-stat-card .inside {
+		padding: var(--spacing-md);
+	}
+}
+
+@media screen and (max-width: 600px) {
+	:root {
+		--spacing-lg: 16px;
+		--spacing-xl: 20px;
+	}
+	
+	.wrap h1 {
+		font-size: 22px;
+	}
+	
+	.wpllmseo-stat-value {
+		font-size: 28px;
+	}
+	
+	.wrap .page-title-action {
+		padding: 10px 16px;
+		font-size: 13px;
+	}
+}
+
+/* ================================================
+   Dark Mode Support (Future)
+   ================================================ */
+@media (prefers-color-scheme: dark) {
+	/* Placeholder for future dark mode implementation */
+}
+
+/* ================================================
+   Print Styles
+   ================================================ */
+@media print {
+	#wpbody-content .wrap {
+		background: #fff;
+		margin: 0;
+		padding: 0;
+	}
+	
+	.wpllmseo-stat-card.postbox,
+	.wrap .postbox {
+		box-shadow: none;
+		border: 1px solid #ddd;
+	}
+	
+	.wrap .page-title-action,
+	.wrap .notice-dismiss {
+		display: none;
+	}
+}

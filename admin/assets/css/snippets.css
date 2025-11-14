@@ -1,0 +1,273 @@
+/**
+ * Snippets CSS
+ *
+ * Styling for the Preferred Snippet System.
+ *
+ * @package WP_LLM_SEO_Indexing
+ */
+
+/* ========================================
+   Snippet Admin Screen (List Table)
+   ======================================== */
+
+.wpllmseo-snippets-screen {
+	margin-top: 20px;
+}
+
+.wpllmseo-snippets-screen .widefat {
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wpllmseo-snippet-preview {
+	max-width: 400px;
+	line-height: 1.5;
+	color: #2c3338;
+	cursor: help;
+}
+
+.wpllmseo-snippet-preview:hover {
+	color: #1d2327;
+}
+
+/* Action buttons in list table */
+.wpllmseo-reindex-snippet,
+.wpllmseo-delete-snippet {
+	margin-right: 4px;
+}
+
+.wpllmseo-delete-snippet {
+	color: #d63638 !important;
+	border-color: #d63638 !important;
+}
+
+.wpllmseo-delete-snippet:hover {
+	background-color: #d63638 !important;
+	color: #fff !important;
+}
+
+/* ========================================
+   Classic Editor Metabox
+   ======================================== */
+
+.wpllmseo-snippet-metabox {
+	padding: 12px;
+}
+
+.wpllmseo-snippet-metabox textarea {
+	width: 100%;
+	min-height: 120px;
+	padding: 8px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+.wpllmseo-snippet-metabox textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: 2px solid transparent;
+}
+
+.wpllmseo-snippet-metabox p.description {
+	margin-top: 8px;
+	margin-bottom: 0;
+	color: #646970;
+	font-size: 13px;
+	font-style: italic;
+}
+
+/* Snippet status indicator */
+.wpllmseo-snippet-status {
+	display: inline-flex;
+	align-items: center;
+	margin-top: 8px;
+	padding: 6px 10px;
+	background-color: #d4edda;
+	border: 1px solid #c3e6cb;
+	border-radius: 4px;
+	color: #155724;
+	font-size: 13px;
+}
+
+.wpllmseo-snippet-status .dashicons {
+	margin-right: 6px;
+	color: #28a745;
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.wpllmseo-snippet-status.no-snippet {
+	background-color: #fff3cd;
+	border-color: #ffeaa7;
+	color: #856404;
+}
+
+.wpllmseo-snippet-status.no-snippet .dashicons {
+	color: #ffc107;
+}
+
+/* ========================================
+   Gutenberg Sidebar Panel
+   ======================================== */
+
+/* Panel container */
+.components-panel__body.wpllmseo-snippet-panel {
+	border-top: 1px solid #e0e0e0;
+}
+
+.wpllmseo-snippet-panel .components-base-control {
+	margin-bottom: 0;
+}
+
+.wpllmseo-snippet-panel .components-base-control__label {
+	font-weight: 600;
+	color: #1e1e1e;
+	margin-bottom: 8px;
+}
+
+.wpllmseo-snippet-panel .components-base-control__help {
+	margin-top: 8px;
+	font-size: 12px;
+	color: #757575;
+}
+
+.wpllmseo-snippet-panel textarea {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+/* Success indicator in Gutenberg */
+.wpllmseo-snippet-exists {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	margin-bottom: 12px;
+	background-color: #d4edda;
+	border: 1px solid #c3e6cb;
+	border-radius: 4px;
+	color: #155724;
+	font-size: 13px;
+}
+
+.wpllmseo-snippet-exists .dashicons,
+.wpllmseo-snippet-exists svg {
+	margin-right: 8px;
+	fill: #28a745;
+	color: #28a745;
+}
+
+/* Save button styling */
+.wpllmseo-snippet-panel .components-button.is-primary {
+	width: 100%;
+	justify-content: center;
+	height: 36px;
+}
+
+.wpllmseo-snippet-panel .components-button.is-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Loading state */
+.wpllmseo-snippet-loading {
+	display: flex;
+	justify-content: center;
+	padding: 24px;
+}
+
+.wpllmseo-snippet-loading .components-spinner {
+	margin: 0;
+}
+
+/* ========================================
+   Responsive Styles
+   ======================================== */
+
+@media screen and (max-width: 782px) {
+	.wpllmseo-snippet-preview {
+		max-width: 100%;
+		font-size: 14px;
+	}
+	
+	.wpllmseo-reindex-snippet,
+	.wpllmseo-delete-snippet {
+		display: block;
+		width: 100%;
+		margin-bottom: 4px;
+		margin-right: 0;
+	}
+	
+	.wpllmseo-snippet-metabox textarea {
+		font-size: 16px; /* Prevent zoom on iOS */
+	}
+}
+
+/* ========================================
+   Accessibility Enhancements
+   ======================================== */
+
+.wpllmseo-snippet-metabox textarea:focus,
+.wpllmseo-snippet-panel textarea:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 0;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+	.wpllmseo-snippet-status {
+		border-width: 2px;
+	}
+	
+	.wpllmseo-snippet-exists {
+		border-width: 2px;
+	}
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.wpllmseo-snippet-metabox textarea,
+	.wpllmseo-snippet-panel textarea {
+		transition: none;
+	}
+}
+
+/* ========================================
+   Dark Mode Support
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+	.wpllmseo-snippet-preview {
+		color: #f0f0f1;
+	}
+	
+	.wpllmseo-snippet-preview:hover {
+		color: #fff;
+	}
+	
+	.wpllmseo-snippet-metabox textarea {
+		background-color: #1e1e1e;
+		color: #f0f0f1;
+		border-color: #3c434a;
+	}
+	
+	.wpllmseo-snippet-metabox textarea:focus {
+		border-color: #4f94d4;
+		box-shadow: 0 0 0 1px #4f94d4;
+	}
+	
+	.wpllmseo-snippet-status {
+		background-color: rgba(212, 237, 218, 0.15);
+		border-color: rgba(195, 230, 203, 0.3);
+		color: #95e2b3;
+	}
+	
+	.wpllmseo-snippet-status .dashicons {
+		color: #95e2b3;
+	}
+}
