@@ -3,7 +3,7 @@
  * Plugin Name: WP LLM SEO & Indexing
  * Plugin URI: https://theworldtechs.com/wp-llm-seo-indexing
  * Description: AI-powered SEO optimization and indexing using LLM embeddings for WordPress content.
- * Version: 1.0.0
+ * Version: 1.2.0
  * Author: Your Name
  * Author URI: https://theworldtechs.com
  * Text Domain: wpllmseo
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'WPLLMSEO_VERSION', '1.0.0' );
+define( 'WPLLMSEO_VERSION', '1.2.0' );
 define( 'WPLLMSEO_MIN_WP_VERSION', '6.0' );
 define( 'WPLLMSEO_MIN_PHP_VERSION', '8.1' );
 define( 'WPLLMSEO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );

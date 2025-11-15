@@ -177,6 +177,16 @@ class WPLLMSEO_Admin {
 			'wpllmseo_migration',
 			array( __CLASS__, 'render_migration' )
 		);
+
+		// Health Check submenu.
+		add_submenu_page(
+			'wpllmseo_dashboard',
+			__( 'Health Check', 'wpllmseo' ),
+			__( 'Health Check', 'wpllmseo' ),
+			'manage_options',
+			'wpllmseo_health',
+			array( __CLASS__, 'render_health_check' )
+		);
 	}
 
 	/**
@@ -358,27 +368,20 @@ class WPLLMSEO_Admin {
 			return;
 		}
 
-		// DEBUG: Write to file to verify handler is executing
-		file_put_contents( 
-			WP_CONTENT_DIR . '/wpllmseo-save-debug.log', 
-			date('Y-m-d H:i:s') . " - Handler called\n" . 
-			"POST data: " . print_r($_POST, true) . "\n\n", 
-			FILE_APPEND 
-		);
-
 		// Verify nonce.
 		if ( ! isset( $_POST['wpllmseo_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wpllmseo_nonce'] ) ), 'wpllmseo_admin_action' ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Nonce failed\n", FILE_APPEND );
+			// Log nonce failure
+			wpllmseo_log( 'Provider save: nonce validation failed', 'security' );
 			wp_die( esc_html__( 'Security check failed. Please try again.', 'wpllmseo' ) );
 		}
 
 		// Check user permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Permission check failed\n", FILE_APPEND );
+			wpllmseo_log( 'Provider save: permission denied', 'security' );
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 
-		file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Starting save process\n", FILE_APPEND );
+		wpllmseo_log( 'Starting provider settings save process', 'info' );
 
 		$settings = get_option( 'wpllmseo_settings', array() );
 		$has_errors = false;
@@ -391,9 +394,8 @@ class WPLLMSEO_Admin {
 
 		// Save provider configurations.
 		if ( isset( $_POST['providers'] ) && is_array( $_POST['providers'] ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Processing providers\n", FILE_APPEND );
 			foreach ( $_POST['providers'] as $provider_id => $config ) {
-				file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Processing provider: $provider_id\n", FILE_APPEND );
+				wpllmseo_log( 'Processing provider: ' . $provider_id, 'debug' );
 				$provider = WPLLMSEO_Provider_Manager::get_provider( $provider_id );
 				if ( $provider ) {
 					// Sanitize config.
@@ -405,13 +407,13 @@ class WPLLMSEO_Admin {
 						$validation = $provider->validate_config( $config );
 						
 						if ( ! is_wp_error( $validation ) ) {
-							file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Validation passed, adding to settings\n", FILE_APPEND );
+							wpllmseo_log( 'Validation passed for provider: ' . $provider_id, 'info' );
 							// Save to settings array (don't call save_provider_config separately)
 							$settings['providers'][ $provider_id ] = $config;
 							
-							file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Will trigger model discovery after save\n", FILE_APPEND );
+							wpllmseo_log( 'Will trigger model discovery after save for: ' . $provider_id, 'debug' );
 						} else {
-							file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Validation error: " . $validation->get_error_message() . "\n", FILE_APPEND );
+							wpllmseo_log( 'Validation error for provider: ' . $provider_id . ' - ' . $validation->get_error_message(), 'error' );
 							$has_errors = true;
 							$error_messages[] = sprintf(
 								'%s: %s',
@@ -421,7 +423,7 @@ class WPLLMSEO_Admin {
 						}
 					} else {
 						// No API key provided - remove from settings if it exists
-						file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - No API key provided, skipping\n", FILE_APPEND );
+						wpllmseo_log( 'No API key provided for provider: ' . $provider_id . ', skipping', 'debug' );
 						if ( isset( $settings['providers'][ $provider_id ] ) ) {
 							unset( $settings['providers'][ $provider_id ] );
 						}
@@ -432,21 +434,16 @@ class WPLLMSEO_Admin {
 
 		// Save active providers and models.
 		if ( isset( $_POST['active_providers'] ) && is_array( $_POST['active_providers'] ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Saving active providers\n", FILE_APPEND );
+			wpllmseo_log( 'Saving active providers', 'debug' );
 			$settings['active_providers'] = array_map( 'sanitize_text_field', $_POST['active_providers'] );
 		}
 		if ( isset( $_POST['active_models'] ) && is_array( $_POST['active_models'] ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Saving active models\n", FILE_APPEND );
+			wpllmseo_log( 'Saving active models', 'debug' );
 			$settings['active_models'] = array_map( 'sanitize_text_field', $_POST['active_models'] );
 		}
 
-		file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Calling update_option\n", FILE_APPEND );
 		$update_result = update_option( 'wpllmseo_settings', $settings );
-		file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - update_option result: " . var_export($update_result, true) . "\n", FILE_APPEND );
-		
-		// Verify the save
-		$verify = get_option( 'wpllmseo_settings', array() );
-		file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Verified settings: " . print_r($verify, true) . "\n\n", FILE_APPEND );
+		wpllmseo_log( 'Updated wpllmseo_settings option', 'info' );
 
 		// Now trigger model discovery for providers with API keys (after save is complete)
 		if ( isset( $_POST['providers'] ) && is_array( $_POST['providers'] ) ) {
@@ -454,7 +451,7 @@ class WPLLMSEO_Admin {
 				if ( ! empty( $config['api_key'] ) ) {
 					$provider = WPLLMSEO_Provider_Manager::get_provider( $provider_id );
 					if ( $provider && ! is_wp_error( $provider->validate_config( $config ) ) ) {
-						file_put_contents( WP_CONTENT_DIR . '/wpllmseo-save-debug.log', date('Y-m-d H:i:s') . " - Triggering model discovery for $provider_id\n", FILE_APPEND );
+						wpllmseo_log( 'Triggering model discovery for ' . $provider_id, 'info' );
 						WPLLMSEO_Provider_Manager::discover_models( $provider_id, true );
 					}
 				}
@@ -609,6 +606,17 @@ class WPLLMSEO_Admin {
 		}
 
 		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/migration.php';
+	}
+
+	/**
+	 * Render health check screen
+	 */
+	public static function render_health_check() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/health-check.php';
 	}
 
 	/**
