@@ -246,6 +246,26 @@ wpllmseo_render_header(
 					</tr>
 					<tr>
 						<th scope="row">
+							<?php esc_html_e( 'Exec Guard (Shell Safety)', 'wpllmseo' ); ?>
+						</th>
+						<td>
+							<fieldset>
+								<label>
+									<input type="checkbox"
+									       id="exec_guard_enabled"
+									       name="exec_guard_enabled"
+									       value="1"
+									       <?php checked( ! empty( $settings['exec_guard_enabled'] ) ); ?> />
+									<?php esc_html_e( 'Require admin opt-in for shell/external commands and log attempts', 'wpllmseo' ); ?>
+								</label>
+								<p class="description">
+									<?php esc_html_e( 'When enabled, ExecGuard will execute only whitelisted commands and log attempts. View logs at the Exec Guard Logs page.', 'wpllmseo' ); ?>
+								</p>
+							</fieldset>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
 							<label for="theme_mode"><?php esc_html_e( 'Theme Mode', 'wpllmseo' ); ?></label>
 						</th>
 						<td>

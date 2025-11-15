@@ -40,7 +40,15 @@ class WPLLMSEO_Queue {
 	 */
 	public function __construct() {
 		global $wpdb;
-		$this->table_name = $wpdb->prefix . 'wpllmseo_jobs';
+		// Validate table name to avoid accidental or injected table operations
+		require_once __DIR__ . '/helpers/class-db-helpers.php';
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+		if ( is_wp_error( $validated ) ) {
+			// Fallback to prefixed name but mark as unsafe (operations should be guarded)
+			$this->table_name = $wpdb->prefix . 'wpllmseo_jobs';
+		} else {
+			$this->table_name = $validated;
+		}
 		$this->logger = new WPLLMSEO_Logger();
 	}
 
@@ -394,7 +402,7 @@ class WPLLMSEO_Queue {
 		);
 
 		$results = $wpdb->get_results(
-			"SELECT status, COUNT(*) as count FROM {$this->table_name} GROUP BY status"
+			$wpdb->prepare( "SELECT status, COUNT(*) as count FROM %s GROUP BY status", $this->table_name )
 		);
 
 		foreach ( $results as $row ) {
@@ -419,9 +427,8 @@ class WPLLMSEO_Queue {
 
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$this->table_name} 
-				WHERE status IN ('completed', 'failed') 
-				AND updated_at < %s",
+				"DELETE FROM %s WHERE status IN ('completed', 'failed') AND updated_at < %s",
+				$this->table_name,
 				$date
 			)
 		);
@@ -449,10 +456,8 @@ class WPLLMSEO_Queue {
 
 		$unlocked = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table_name} 
-				SET locked = 0, status = 'queued' 
-				WHERE locked = 1 
-				AND updated_at < %s",
+				"UPDATE %s SET locked = 0, status = 'queued' WHERE locked = 1 AND updated_at < %s",
+				$this->table_name,
 				$stale_time
 			)
 		);
@@ -476,7 +481,8 @@ class WPLLMSEO_Queue {
 	public function clear_all_jobs() {
 		global $wpdb;
 
-		$result = $wpdb->query( "TRUNCATE TABLE {$this->table_name}" );
+		// Use DELETE with caution; TRUNCATE is more destructive and may require explicit privileges.
+		$result = $wpdb->query( $wpdb->prepare( "DELETE FROM %s", $this->table_name ) );
 
 		if ( $result ) {
 			$this->logger->warning(

@@ -21,6 +21,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 function wpllmseo_uninstall() {
 	global $wpdb;
 
+	require_once __DIR__ . '/includes/helpers/class-db-helpers.php';
+
 	// Delete all database tables (no conditional - always clean up on uninstall)
 	$tables = array(
 		'wpllmseo_snippets',
@@ -34,7 +36,12 @@ function wpllmseo_uninstall() {
 	);
 	
 	foreach ( $tables as $table ) {
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" );
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( $table );
+		if ( is_wp_error( $validated ) ) {
+			// If it's not a known plugin table, fallback to prefixed name but skip dangerous drops
+			continue;
+		}
+		$wpdb->query( $wpdb->prepare( "DROP TABLE IF EXISTS %s", $validated ) );
 	}
 
 	// Delete log files

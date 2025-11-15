@@ -26,9 +26,22 @@ class WPLLMSEO_Admin {
 		add_action( 'admin_init', array( __CLASS__, 'handle_settings_save' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_providers_save' ) );
 		add_action( 'admin_post_wpllmseo_download_log', array( __CLASS__, 'handle_log_download' ) );
+		// Export and clear exec logs via admin actions for robustness
+		add_action( 'admin_post_wpllmseo_export_exec_logs', array( __CLASS__, 'handle_exec_logs_export' ) );
+		add_action( 'admin_post_wpllmseo_clear_exec_logs', array( __CLASS__, 'handle_exec_logs_clear' ) );
+		add_action( 'admin_post_wpllmseo_run_prune_exec_logs', array( __CLASS__, 'handle_run_prune_exec_logs' ) );
+		add_action( 'admin_post_wpllmseo_delete_exec_log', array( __CLASS__, 'handle_exec_log_delete' ) );
 		
 		// AJAX handlers
 		add_action( 'wp_ajax_wpllmseo_clear_completed', array( __CLASS__, 'ajax_clear_completed_jobs' ) );
+
+		// Post-migration cleanup control handlers
+		add_action( 'admin_post_wpllmseo_cleanup_start', array( __CLASS__, 'handle_cleanup_start' ) );
+		add_action( 'admin_post_wpllmseo_cleanup_stop', array( __CLASS__, 'handle_cleanup_stop' ) );
+		add_action( 'admin_post_wpllmseo_cleanup_resume', array( __CLASS__, 'handle_cleanup_resume' ) );
+
+		// Cron hook for running cleanup batches
+		add_action( 'wpllmseo_cleanup_postmeta_job', array( __CLASS__, 'run_cleanup_cron' ) );
 	}
 
 	/**
@@ -105,6 +118,16 @@ class WPLLMSEO_Admin {
 			array( __CLASS__, 'render_logs' )
 		);
 
+		// Exec Guard Logs (detailed)
+		add_submenu_page(
+			'wpllmseo_dashboard',
+			__( 'Exec Guard Logs', 'wpllmseo' ),
+			__( 'Exec Guard Logs', 'wpllmseo' ),
+			'manage_options',
+			'wpllmseo_exec_logs',
+			array( __CLASS__, 'render_exec_logs' )
+		);
+
 		// API Providers submenu (v1.2.0+).
 		add_submenu_page(
 			'wpllmseo_dashboard',
@@ -143,6 +166,16 @@ class WPLLMSEO_Admin {
 			'manage_options',
 			'wpllmseo_test_installation',
 			array( __CLASS__, 'render_test_installation' )
+		);
+
+		// Migration & Cleanup submenu.
+		add_submenu_page(
+			'wpllmseo_dashboard',
+			__( 'Migrations', 'wpllmseo' ),
+			__( 'Migrations', 'wpllmseo' ),
+			'manage_options',
+			'wpllmseo_migration',
+			array( __CLASS__, 'render_migration' )
 		);
 	}
 
@@ -226,6 +259,16 @@ class WPLLMSEO_Admin {
 				),
 			)
 		);
+
+		// Enqueue migration.js when on migration page
+		if ( isset( $_GET['page'] ) && 'wpllmseo_migration' === $_GET['page'] ) {
+			$mig_js = WPLLMSEO_PLUGIN_DIR . 'admin/assets/js/migration.js';
+			$mig_url = WPLLMSEO_PLUGIN_URL . 'admin/assets/js/migration.js';
+			if ( file_exists( $mig_js ) ) {
+				wp_enqueue_script( 'wpllmseo-migration', $mig_url, array(), filemtime( $mig_js ), true );
+				wp_localize_script( 'wpllmseo-migration', 'wpllmseo_admin', array( 'rest_url' => rest_url(), 'nonce' => wp_create_nonce( 'wp_rest' ) ) );
+			}
+		}
 	}
 
 	/**
@@ -274,6 +317,7 @@ class WPLLMSEO_Admin {
 			'semantic_linking_max_suggestions' => isset( $_POST['semantic_linking_max_suggestions'] ) ? absint( $_POST['semantic_linking_max_suggestions'] ) : 5,
 			// Lower Priority Features
 			'enable_media_embeddings'         => isset( $_POST['enable_media_embeddings'] ) ? (bool) $_POST['enable_media_embeddings'] : false,
+			'exec_guard_enabled'             => isset( $_POST['exec_guard_enabled'] ) ? (bool) $_POST['exec_guard_enabled'] : false,
 			'enable_crawler_logs'             => isset( $_POST['enable_crawler_logs'] ) ? (bool) $_POST['enable_crawler_logs'] : false,
 			'enable_html_renderer'            => isset( $_POST['enable_html_renderer'] ) ? (bool) $_POST['enable_html_renderer'] : false,
 			// MCP Integration (v1.1.0+)
@@ -489,6 +533,42 @@ class WPLLMSEO_Admin {
 	}
 
 	/**
+	 * Render Exec Guard logs screen.
+	 */
+	public static function render_exec_logs() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
+		}
+
+		// Handle export action (GET)
+		if ( isset( $_GET['action'] ) && 'export' === $_GET['action'] ) {
+			self::handle_exec_logs_export();
+		}
+
+		// Handle clear logs (POST)
+		if ( isset( $_POST['wpllmseo_clear_exec_logs'] ) ) {
+			self::handle_exec_logs_clear();
+		}
+
+		// If viewing detail
+		if ( isset( $_GET['view'] ) && 'detail' === $_GET['view'] && isset( $_GET['id'] ) ) {
+			require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/exec-log-detail.php';
+			return;
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/exec-logs.php';
+		?>
+		<form method="get" action="">
+			<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'wpllmseo_export_exec_logs' ) ) ); ?>" class="page-title-action">Export CSV</a>
+			<?php if ( current_user_can( 'manage_options' ) ) : ?>
+				<?php $run_url = wp_nonce_url( admin_url( 'admin-post.php?action=wpllmseo_run_prune_exec_logs' ), 'wpllmseo_run_prune' ); ?>
+				<a href="<?php echo esc_url( $run_url ); ?>" class="page-title-action">Run Prune Now</a>
+			<?php endif; ?>
+		</form>
+		<?php
+	}
+
+	/**
 	 * Render API providers screen (v1.2.0+).
 	 */
 	public static function render_providers() {
@@ -521,6 +601,17 @@ class WPLLMSEO_Admin {
 	}
 
 	/**
+	 * Render migration and cleanup screen.
+	 */
+	public static function render_migration() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/migration.php';
+	}
+
+	/**
 	 * Handle log file download
 	 */
 	public static function handle_log_download() {
@@ -544,5 +635,262 @@ class WPLLMSEO_Admin {
 		// Download log
 		$logs_reader = new WPLLMSEO_Logs();
 		$logs_reader->download_log( $log_name );
+	}
+
+	/**
+	 * Export exec logs as CSV. POST action protected by nonce.
+	 */
+	public static function handle_exec_logs_export() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to export logs.', 'wpllmseo' ) );
+		}
+
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wpllmseo_export_exec_logs' ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'wpllmseo' ) );
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+
+		// Support filters passed via GET
+		$filters = array(
+			'user_id' => isset( $_GET['filter_user'] ) ? intval( $_GET['filter_user'] ) : null,
+			'result' => isset( $_GET['filter_result'] ) ? $_GET['filter_result'] : null,
+			'date_from' => isset( $_GET['filter_from'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_from'] ) ) : null,
+			'date_to' => isset( $_GET['filter_to'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_to'] ) ) : null,
+			'limit' => 10000,
+			'offset' => 0,
+		);
+
+		$logs = WPLLMSEO_Exec_Logger::query_logs( $filters );
+
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=wpllmseo-exec-logs-' . date( 'Ymd-His' ) . '.csv' );
+
+		$out = fopen( 'php://output', 'w' );
+		fputcsv( $out, array( 'id', 'user_id', 'command', 'stdout', 'stderr', 'result', 'created_at' ) );
+		foreach ( $logs as $log ) {
+			fputcsv( $out, array( $log->id, $log->user_id, $log->command, $log->stdout, $log->stderr, $log->result, $log->created_at ) );
+		}
+		fclose( $out );
+		exit;
+	}
+
+	/**
+	 * Handle single exec log deletion via admin-post.
+	 */
+	public static function handle_exec_log_delete() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to delete logs.', 'wpllmseo' ) );
+		}
+
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'wpllmseo_delete_exec_log' ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'wpllmseo' ) );
+		}
+
+		$id = isset( $_POST['log_id'] ) ? absint( $_POST['log_id'] ) : 0;
+		if ( ! $id ) {
+			wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_exec_logs', 'error' => 'invalid_id' ), admin_url( 'admin.php' ) ) );
+			exit;
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+		WPLLMSEO_Exec_Logger::delete_log( $id );
+
+		wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_exec_logs', 'deleted' => '1' ), admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Run prune now via admin-post handler.
+	 */
+	public static function handle_run_prune_exec_logs() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'wpllmseo' ) );
+		}
+		check_admin_referer( 'wpllmseo_run_prune' );
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+
+		$settings = get_option( 'wpllmseo_settings', array() );
+		$days = isset( $settings['exec_logs_retention_days'] ) ? intval( $settings['exec_logs_retention_days'] ) : 30;
+
+		$deleted = WPLLMSEO_Exec_Logger::prune_older_than_days( $days );
+
+		$redirect = add_query_arg( array( 'page' => 'wpllmseo_exec_logs', 'wpllmseo_prune_result' => $deleted ), admin_url( 'admin.php' ) );
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
+	 * Start post-migration cleanup: initialize progress and schedule cron.
+	 */
+		public static function handle_cleanup_start() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wpllmseo' ) );
+			}
+
+			check_admin_referer( 'wpllmseo_cleanup_control' );
+
+			// Safety: require a recent dry-run preview (24h) unless force flag provided
+			$force = isset( $_POST['force_start'] ) && isset( $_POST['_wpnonce_force'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce_force'] ) ), 'wpllmseo_cleanup_force' );
+
+			if ( ! $force ) {
+				$last_preview = get_option( 'wpllmseo_cleanup_last_preview', null );
+				if ( empty( $last_preview ) || ( time() - intval( $last_preview['time'] ) ) > DAY_IN_SECONDS ) {
+					wp_die( esc_html__( 'A recent cleanup preview is required before starting automatic deletion. Please run the preview and confirm.', 'wpllmseo' ) );
+				}
+			}
+
+			// Initialize progress option
+			$progress = array(
+				'running' => true,
+				'offset' => 0,
+				'batch' => isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 50,
+				'last_run' => null,
+				'total_processed' => 0,
+				'max_total' => isset( $_POST['max_total'] ) ? absint( $_POST['max_total'] ) : 0,
+			);
+			update_option( 'wpllmseo_cleanup_progress', $progress );
+
+			if ( ! wp_next_scheduled( 'wpllmseo_cleanup_postmeta_job' ) ) {
+				wp_schedule_event( time(), 'hourly', 'wpllmseo_cleanup_postmeta_job' );
+			}
+
+			wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_migration', 'cleanup_started' => '1' ), admin_url( 'admin.php' ) ) );
+			exit;
+		}
+
+		/**
+		 * Stop post-migration cleanup: mark running=false and unschedule cron.
+		 */
+		public static function handle_cleanup_stop() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wpllmseo' ) );
+			}
+
+			check_admin_referer( 'wpllmseo_cleanup_control' );
+
+			$progress = get_option( 'wpllmseo_cleanup_progress', array() );
+			$progress['running'] = false;
+			update_option( 'wpllmseo_cleanup_progress', $progress );
+
+			// Unschedule the cron
+			if ( wp_next_scheduled( 'wpllmseo_cleanup_postmeta_job' ) ) {
+				wp_clear_scheduled_hook( 'wpllmseo_cleanup_postmeta_job' );
+			}
+
+			wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_migration', 'cleanup_stopped' => '1' ), admin_url( 'admin.php' ) ) );
+			exit;
+		}
+
+		/**
+		 * Resume post-migration cleanup: mark running=true and schedule cron.
+		 */
+		public static function handle_cleanup_resume() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wpllmseo' ) );
+			}
+
+			check_admin_referer( 'wpllmseo_cleanup_control' );
+
+			$progress = get_option( 'wpllmseo_cleanup_progress', array() );
+			$progress['running'] = true;
+			if ( ! isset( $progress['batch'] ) ) {
+				$progress['batch'] = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 50;
+			}
+			if ( isset( $_POST['max_total'] ) ) {
+				$progress['max_total'] = absint( $_POST['max_total'] );
+			}
+			update_option( 'wpllmseo_cleanup_progress', $progress );
+
+			if ( ! wp_next_scheduled( 'wpllmseo_cleanup_postmeta_job' ) ) {
+				wp_schedule_event( time(), 'hourly', 'wpllmseo_cleanup_postmeta_job' );
+			}
+
+			wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_migration', 'cleanup_resumed' => '1' ), admin_url( 'admin.php' ) ) );
+			exit;
+		}
+
+		/**
+		 * Cron runner that executes a single cleanup batch and updates progress.
+		 */
+		public static function run_cleanup_cron() {
+			$progress = get_option( 'wpllmseo_cleanup_progress', array() );
+			if ( empty( $progress ) || empty( $progress['running'] ) ) {
+				// nothing to do
+				return;
+			}
+
+			$batch = isset( $progress['batch'] ) ? absint( $progress['batch'] ) : 50;
+			$offset = isset( $progress['offset'] ) ? absint( $progress['offset'] ) : 0;
+
+			require_once WPLLMSEO_PLUGIN_DIR . 'includes/migrations/class-cleanup-postmeta.php';
+
+			$res = WPLLMSEO_Cleanup_Postmeta::run( $batch, $offset, true );
+
+			// Update progress
+			$progress['offset'] = $offset + $res['processed'];
+			$progress['last_run'] = current_time( 'mysql' );
+			$progress['total_processed'] = isset( $progress['total_processed'] ) ? intval( $progress['total_processed'] ) + $res['processed'] : $res['processed'];
+
+			// Enforce max_total if set (>0)
+			if ( ! empty( $progress['max_total'] ) && $progress['total_processed'] >= intval( $progress['max_total'] ) ) {
+				$progress['running'] = false;
+				// record last result: hit max
+				$last = array(
+					'reason' => 'max_total_reached',
+					'total_processed' => $progress['total_processed'],
+					'max_total' => intval( $progress['max_total'] ),
+					'time' => current_time( 'mysql' ),
+				);
+				update_option( 'wpllmseo_cleanup_last_result', $last );
+				// Audit log
+				require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+				WPLLMSEO_Exec_Logger::log( json_encode( array( 'action' => 'cleanup', 'event' => 'max_total_reached', 'total_processed' => $progress['total_processed'], 'max_total' => intval( $progress['max_total'] ) ) ), '', '', 0 );
+				// ensure cron cleared
+				if ( wp_next_scheduled( 'wpllmseo_cleanup_postmeta_job' ) ) {
+					wp_clear_scheduled_hook( 'wpllmseo_cleanup_postmeta_job' );
+				}
+			}
+
+			// Stop if nothing processed (end of attachments)
+			if ( $res['processed'] === 0 ) {
+				$progress['running'] = false;
+				// record last result: completed
+				$last = array(
+					'reason' => 'completed',
+					'total_processed' => $progress['total_processed'],
+					'time' => current_time( 'mysql' ),
+				);
+				update_option( 'wpllmseo_cleanup_last_result', $last );
+				// Audit log entry for completion
+				require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+				WPLLMSEO_Exec_Logger::log( json_encode( array( 'action' => 'cleanup', 'event' => 'completed', 'total_processed' => $progress['total_processed'] ) ), '', '', 0 );
+				if ( wp_next_scheduled( 'wpllmseo_cleanup_postmeta_job' ) ) {
+					wp_clear_scheduled_hook( 'wpllmseo_cleanup_postmeta_job' );
+				}
+			}
+
+			update_option( 'wpllmseo_cleanup_progress', $progress );
+		}
+
+	/**
+	 * Clear exec logs (truncate). POST action protected by nonce and capability.
+	 */
+	public static function handle_exec_logs_clear() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to clear logs.', 'wpllmseo' ) );
+		}
+
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'wpllmseo_clear_exec_logs' ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'wpllmseo' ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'wpllmseo_exec_logs';
+		$wpdb->query( "TRUNCATE TABLE {$table}" );
+
+		wp_safe_redirect( add_query_arg( array( 'page' => 'wpllmseo_exec_logs', 'cleared' => '1' ), admin_url( 'admin.php' ) ) );
+		exit;
 	}
 }

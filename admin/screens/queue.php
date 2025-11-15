@@ -19,13 +19,19 @@ require_once WPLLMSEO_PLUGIN_DIR . 'admin/components/table.php';
 // Handle bulk actions
 if ( isset( $_POST['wpllmseo_clear_failed_regenerate'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
 	global $wpdb;
-	$queue_table = $wpdb->prefix . 'wpllmseo_jobs';
-	
+	require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+	$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+	if ( is_wp_error( $validated ) ) {
+		wp_die( esc_html__( 'Queue table not found or invalid.', 'wpllmseo' ) );
+	}
+
+	$queue_table = $validated;
+
 	// Clear all failed jobs
-	$deleted = $wpdb->query( "DELETE FROM $queue_table WHERE status = 'failed'" );
-	
+	$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM {$queue_table} WHERE status = %s", 'failed' ) );
+
 	// Clear all pending jobs to avoid duplicates
-	$wpdb->query( "DELETE FROM $queue_table WHERE status = 'pending'" );
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$queue_table} WHERE status = %s", 'pending' ) );
 	
 	// Get all published posts
 	$posts = get_posts(

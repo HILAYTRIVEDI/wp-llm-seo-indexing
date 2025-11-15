@@ -73,7 +73,7 @@ abstract class WPLLMSEO_LLM_Provider_Base implements WPLLMSEO_LLM_Provider_Inter
 	}
 
 	/**
-	 * Make HTTP request with retry logic
+	 * Make HTTP request with retry logic using centralized helper.
 	 *
 	 * @param string $url     Request URL.
 	 * @param array  $args    Request arguments.
@@ -81,50 +81,18 @@ abstract class WPLLMSEO_LLM_Provider_Base implements WPLLMSEO_LLM_Provider_Inter
 	 * @return array|WP_Error Response array or error.
 	 */
 	protected function make_request( string $url, array $args = array(), int $retries = 3 ) {
-		$attempt = 0;
+		require_once __DIR__ . '/../helpers/class-http-retry.php';
 
-		while ( $attempt < $retries ) {
-			$response = wp_remote_request( $url, $args );
+		$logger = function( $tag, $context = array() ) {
+			$this->log( $tag . ' ' . ( is_array( $context ) ? wp_json_encode( $context ) : (string) $context ), 'info' );
+		};
 
-			if ( is_wp_error( $response ) ) {
-				$attempt++;
-				if ( $attempt < $retries ) {
-					// Exponential backoff.
-					sleep( pow( 2, $attempt ) );
-					continue;
-				}
-				return $response;
-			}
+		$options = array(
+			'max_retries' => $retries,
+			'logger'      => $logger,
+		);
 
-			$code = wp_remote_retrieve_response_code( $response );
-
-			// Rate limit - wait and retry.
-			if ( 429 === $code ) {
-				$attempt++;
-				if ( $attempt < $retries ) {
-					sleep( pow( 2, $attempt ) );
-					continue;
-				}
-				return new WP_Error( 'rate_limit', __( 'Rate limit exceeded', 'wpllmseo' ) );
-			}
-
-			// Success.
-			if ( $code >= 200 && $code < 300 ) {
-				return $response;
-			}
-
-			// Client or server error.
-			return new WP_Error(
-				'http_error',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'HTTP error: %d', 'wpllmseo' ),
-					$code
-				)
-			);
-		}
-
-		return new WP_Error( 'max_retries', __( 'Maximum retries exceeded', 'wpllmseo' ) );
+		return WPLLMSEO_HTTP_Retry::request( $url, $args, $retries, $options );
 	}
 
 	/**

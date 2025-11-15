@@ -112,6 +112,13 @@ function wpllmseo_init() {
 	if ( is_admin() ) {
 		WPLLMSEO_Admin::init();
 	}
+
+	// Ensure default retention setting exists
+	$settings = get_option( 'wpllmseo_settings', array() );
+	if ( ! isset( $settings['exec_logs_retention_days'] ) ) {
+		$settings['exec_logs_retention_days'] = 30;
+		update_option( 'wpllmseo_settings', $settings );
+	}
 	
 	// Load enterprise helper functions (v1.2.0+)
 	$helper_files = array(
@@ -275,6 +282,22 @@ add_action( 'wpllmseo_generate_ai_sitemap_daily', function() {
 	$sitemap = new WPLLMSEO_AI_Sitemap();
 	$sitemap->daily_regenerate();
 } );
+
+/**
+ * Daily prune of exec logs according to retention setting.
+ */
+add_action( 'wpllmseo_prune_exec_logs_daily', function() {
+	$settings = get_option( 'wpllmseo_settings', array() );
+	$days = isset( $settings['exec_logs_retention_days'] ) ? intval( $settings['exec_logs_retention_days'] ) : 30;
+	require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-exec-logger.php';
+	$deleted = WPLLMSEO_Exec_Logger::prune_older_than_days( $days );
+	wpllmseo_log( sprintf( 'Pruned %d exec log rows older than %d days', $deleted, $days ), 'info' );
+} );
+
+// Schedule daily prune if not scheduled
+if ( ! wp_next_scheduled( 'wpllmseo_prune_exec_logs_daily' ) ) {
+	wp_schedule_event( time(), 'daily', 'wpllmseo_prune_exec_logs_daily' );
+}
 
 /**
  * Hook MCP token cleanup to cron (v1.1.0+)

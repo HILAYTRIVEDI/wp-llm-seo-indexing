@@ -40,6 +40,8 @@ require_once __DIR__ . '/includes/class-crawler-logs.php';
 require_once __DIR__ . '/includes/mcp/class-mcp-audit.php';
 require_once __DIR__ . '/includes/mcp/class-mcp-auth.php';
 require_once __DIR__ . '/includes/class-installer-upgrader.php';
+// DB helpers for safe table name validation
+require_once __DIR__ . '/includes/helpers/class-db-helpers.php';
 
 echo "<span class='info'>Starting installation...</span>\n\n";
 
@@ -62,13 +64,20 @@ try {
 		'wpllmseo_jobs_dead_letter',
 		'wpllmseo_tokens',
 	);
-	
+
 	$tables_ok = true;
 	foreach ( $tables as $table ) {
-		$full_table = $wpdb->prefix . $table;
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( $table );
+		if ( is_wp_error( $validated ) ) {
+			echo "<span class='error'>   ✗ Table name not allowed: $table</span>\n";
+			$tables_ok = false;
+			continue;
+		}
+
+		$full_table = $validated;
 		$exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $full_table ) );
 		if ( $exists ) {
-			$count = $wpdb->get_var( "SELECT COUNT(*) FROM `$full_table`" );
+			$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$full_table}`" );
 			echo "<span class='success'>   ✓ Table exists: $full_table (rows: $count)</span>\n";
 		} else {
 			echo "<span class='error'>   ✗ Table missing: $full_table</span>\n";
