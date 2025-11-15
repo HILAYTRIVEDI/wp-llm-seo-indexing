@@ -4,7 +4,7 @@
  * Plugin URI: https://theworldtechs.com/wp-llm-seo-indexing
  * Description: AI-powered SEO optimization and indexing using LLM embeddings for WordPress content.
  * Version: 1.2.0
- * Author: Your Name
+ * Author: Hilay Trivedi
  * Author URI: https://theworldtechs.com
  * Text Domain: wpllmseo
  * Domain Path: /languages
