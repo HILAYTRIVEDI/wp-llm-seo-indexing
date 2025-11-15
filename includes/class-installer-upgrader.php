@@ -345,6 +345,7 @@ class WPLLMSEO_Installer_Upgrader {
 				'model'                           => WPLLMSEO_GEMINI_MODEL,
 				'auto_index'                      => true,
 				'batch_size'                      => 10,
+				'daily_token_limit'               => 100000,
 				'enable_logging'                  => true,
 				'theme_mode'                      => 'auto',
 				'enable_ai_sitemap'               => true,
@@ -375,6 +376,12 @@ class WPLLMSEO_Installer_Upgrader {
 			update_option( 'wpllmseo_settings', $default_settings );
 		} else {
 			$updated = false;
+			
+			// Add daily token limit if missing
+			if ( ! isset( $existing_settings['daily_token_limit'] ) ) {
+				$existing_settings['daily_token_limit'] = 100000;
+				$updated = true;
+			}
 			
 			// If settings exist but enable_ai_sitemap is not set, add it as true
 			if ( ! isset( $existing_settings['enable_ai_sitemap'] ) ) {
@@ -484,9 +491,9 @@ class WPLLMSEO_Installer_Upgrader {
 	 * Schedule cron events
 	 */
 	public static function schedule_cron_events() {
-		// Worker cron (every minute)
+		// Worker cron (daily at 2 AM) - optimized to run once per day
 		if ( ! wp_next_scheduled( 'wpllmseo_worker_event' ) ) {
-			wp_schedule_event( time(), 'wpllmseo_every_minute', 'wpllmseo_worker_event' );
+			wp_schedule_event( strtotime( '02:00:00' ), 'daily', 'wpllmseo_worker_event' );
 		}
 
 		// AI Sitemap daily regeneration

@@ -94,20 +94,27 @@ class WPLLMSEO_Worker_REST {
 	 * @return WP_REST_Response
 	 */
 	public function run_worker( $request ) {
-		$limit = $request->get_param( 'limit' ) ? absint( $request->get_param( 'limit' ) ) : 10;
+		$limit = $request->get_param( 'limit' ) ? absint( $request->get_param( 'limit' ) ) : 5; // Reduced from 10 to 5 for token optimization
+		$bypass_cooldown = $request->get_param( 'bypass_cooldown' ) ? (bool) $request->get_param( 'bypass_cooldown' ) : false;
 
-		$result = $this->worker->run( $limit );
+		$result = $this->worker->run( $limit, $bypass_cooldown );
 
-		return rest_ensure_response(
-			array(
-				'success' => $result['success'],
-				'message' => $result['message'],
-				'data'    => array(
-					'processed' => $result['processed'],
-					'failed'    => $result['failed'] ?? 0,
-				),
-			)
+		$response_data = array(
+			'success' => $result['success'],
+			'message' => $result['message'],
+			'data'    => array(
+				'processed' => $result['processed'],
+				'failed'    => $result['failed'] ?? 0,
+			),
 		);
+		
+		// Include cooldown info if present
+		if ( isset( $result['cooldown_active'] ) ) {
+			$response_data['data']['cooldown_active'] = $result['cooldown_active'];
+			$response_data['data']['next_run'] = $result['next_run'];
+		}
+
+		return rest_ensure_response( $response_data );
 	}
 
 	/**

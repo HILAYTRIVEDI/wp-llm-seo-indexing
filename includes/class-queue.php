@@ -80,10 +80,8 @@ class WPLLMSEO_Queue {
 				'queue.log'
 			);
 			
-			// Trigger worker to process job immediately
-			if ( ! wp_next_scheduled( 'wpllmseo_worker_event' ) ) {
-				wp_schedule_single_event( time(), 'wpllmseo_worker_event' );
-			}
+			// Don't trigger worker immediately - let scheduled cron handle it
+			// This prevents excessive API calls and token usage
 			
 			return $job_id;
 		}

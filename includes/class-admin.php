@@ -253,6 +253,7 @@ class WPLLMSEO_Admin {
 			'model'                           => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : WPLLMSEO_GEMINI_MODEL,
 			'auto_index'                      => isset( $_POST['auto_index'] ) ? (bool) $_POST['auto_index'] : false,
 			'batch_size'                      => isset( $_POST['batch_size'] ) ? absint( $_POST['batch_size'] ) : 10,
+			'daily_token_limit'               => isset( $_POST['daily_token_limit'] ) ? absint( $_POST['daily_token_limit'] ) : 100000,
 			'enable_logging'                  => isset( $_POST['enable_logging'] ) ? (bool) $_POST['enable_logging'] : false,
 			'theme_mode'                      => isset( $_POST['theme_mode'] ) ? sanitize_text_field( wp_unslash( $_POST['theme_mode'] ) ) : 'auto',
 			'enable_ai_sitemap'               => isset( $_POST['enable_ai_sitemap'] ) ? (bool) $_POST['enable_ai_sitemap'] : false,

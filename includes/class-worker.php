@@ -36,6 +36,13 @@ class WPLLMSEO_Worker {
 	private $job_runner;
 
 	/**
+	 * Token tracker instance
+	 *
+	 * @var WPLLMSEO_Token_Tracker
+	 */
+	private $token_tracker;
+
+	/**
 	 * Worker lock option name
 	 *
 	 * @var string
@@ -56,6 +63,7 @@ class WPLLMSEO_Worker {
 		$this->logger = new WPLLMSEO_Logger();
 		$this->queue = new WPLLMSEO_Queue();
 		$this->job_runner = new WPLLMSEO_Job_Runner();
+		$this->token_tracker = new WPLLMSEO_Token_Tracker();
 
 		// Register cron callback
 		add_action( 'wpllmseo_worker_event', array( $this, 'run_cron_worker' ) );
@@ -65,9 +73,34 @@ class WPLLMSEO_Worker {
 	 * Run worker (CLI or manual trigger)
 	 *
 	 * @param int $limit Maximum number of jobs to process (default: 10).
+	 * @param bool $bypass_cooldown Whether to bypass the cooldown check (default: false).
 	 * @return array Processing results.
 	 */
-	public function run( $limit = 10 ) {
+	public function run( $limit = 10, $bypass_cooldown = false ) {
+		// Check cooldown for manual runs unless explicitly bypassed
+		if ( ! $bypass_cooldown && ! defined( 'WP_CLI' ) ) {
+			$last_manual_run = get_option( 'wpllmseo_worker_last_manual_run', 0 );
+			$cooldown_period = 24 * HOUR_IN_SECONDS; // 24 hours
+			
+			if ( time() - $last_manual_run < $cooldown_period ) {
+				$next_run_time = $last_manual_run + $cooldown_period;
+				$wait_time = human_time_diff( time(), $next_run_time );
+				
+				$this->logger->warning(
+					sprintf( 'Worker cooldown active. Please wait %s before running again.', $wait_time ),
+					array( 'next_run' => date( 'Y-m-d H:i:s', $next_run_time ) ),
+					'worker.log'
+				);
+				
+				return array(
+					'success' => false,
+					'message' => sprintf( 'Worker cooldown active. Please wait %s before running again. This prevents excessive token usage.', $wait_time ),
+					'processed' => 0,
+					'cooldown_active' => true,
+					'next_run' => date( 'Y-m-d H:i:s', $next_run_time ),
+				);
+			}
+		}
 		if ( ! $this->acquire_lock() ) {
 			$this->logger->warning(
 				'Worker already running, cannot acquire lock',
@@ -87,13 +120,32 @@ class WPLLMSEO_Worker {
 		$failed = 0;
 
 		$this->logger->info(
-			sprintf( 'Worker started (limit: %d)', $limit ),
-			array( 'limit' => $limit ),
+			sprintf( 'Worker started (limit: %d, token usage: %.1f%%)', 
+				$limit, 
+				$this->token_tracker->get_usage_percentage() 
+			),
+			array( 
+				'limit' => $limit,
+				'remaining_tokens' => $this->token_tracker->get_remaining_tokens(),
+			),
 			'worker.log'
 		);
 
 		try {
 			while ( $processed < $limit ) {
+				// Check token usage before processing each job
+				if ( ! $this->token_tracker->can_use_tokens( 1000 ) ) {
+					$this->logger->warning(
+						'Daily token limit reached or nearly exceeded. Stopping worker.',
+						array(
+							'tokens_used' => $this->token_tracker->get_daily_usage()['tokens_used'],
+							'limit' => $this->token_tracker->get_remaining_tokens(),
+						),
+						'worker.log'
+					);
+					break;
+				}
+
 				// First unlock any stale jobs
 				$this->queue->unlock_stale_jobs();
 
@@ -154,6 +206,11 @@ class WPLLMSEO_Worker {
 			'worker.log'
 		);
 
+		// Update manual run timestamp for cooldown
+		if ( ! defined( 'DOING_CRON' ) && $processed > 0 ) {
+			update_option( 'wpllmseo_worker_last_manual_run', time(), false );
+		}
+
 		return array(
 			'success' => true,
 			'message' => sprintf( 'Processed %d jobs, %d failed', $processed, $failed ),
@@ -163,11 +220,32 @@ class WPLLMSEO_Worker {
 	}
 
 	/**
-	 * Run worker in cron mode (limited to 3 jobs)
+	 * Run worker in cron mode (limited to 5 jobs with 24-hour cooldown)
 	 */
 	public function run_cron_worker() {
-		// Cron processes max 3 jobs to avoid overload
-		$this->run( 3 );
+		// Check cooldown - only run if 24 hours have passed
+		$last_run = get_option( 'wpllmseo_worker_last_run', 0 );
+		$cooldown_period = 24 * HOUR_IN_SECONDS; // 24 hours
+		
+		if ( time() - $last_run < $cooldown_period ) {
+			$this->logger->info(
+				sprintf( 'Worker cooldown active. Last run: %s. Next run in: %s', 
+					date( 'Y-m-d H:i:s', $last_run ),
+					human_time_diff( time(), $last_run + $cooldown_period )
+				),
+				array(),
+				'worker.log'
+			);
+			return;
+		}
+		
+		// Cron processes max 5 jobs to optimize token usage
+		$result = $this->run( 5, true );
+		
+		// Update last run timestamp only if jobs were processed
+		if ( $result['processed'] > 0 ) {
+			update_option( 'wpllmseo_worker_last_run', time(), false );
+		}
 	}
 
 	/**

@@ -179,7 +179,38 @@ wpllmseo_render_header(
 							       max="50" 
 							       class="small-text" />
 							<p class="description">
-								<?php esc_html_e( 'Number of items to process in each batch. Lower values use less resources.', 'wpllmseo' ); ?>
+								<?php esc_html_e( 'Number of items to process in each batch. Lower values (5-10) optimize token usage.', 'wpllmseo' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="daily_token_limit"><?php esc_html_e( 'Daily Token Limit', 'wpllmseo' ); ?></label>
+						</th>
+						<td>
+							<input type="number" 
+							       id="daily_token_limit" 
+							       name="daily_token_limit" 
+							       value="<?php echo esc_attr( isset( $settings['daily_token_limit'] ) ? $settings['daily_token_limit'] : 100000 ); ?>" 
+							       min="1000" 
+							       max="10000000" 
+							       step="1000" 
+							       class="regular-text" />
+							<p class="description">
+								<?php 
+								if ( class_exists( 'WPLLMSEO_Token_Tracker' ) ) {
+									$tracker = new WPLLMSEO_Token_Tracker();
+									$usage = $tracker->get_daily_usage();
+									printf(
+										/* translators: 1: tokens used, 2: percentage */
+										esc_html__( 'Maximum tokens per day. Today: %1$d tokens (%.1f%%). Prevents excessive API costs.', 'wpllmseo' ),
+										$usage['tokens_used'],
+										$tracker->get_usage_percentage()
+									);
+								} else {
+									esc_html_e( 'Maximum tokens to use per day. This prevents excessive API costs.', 'wpllmseo' );
+								}
+								?>
 							</p>
 						</td>
 					</tr>

@@ -449,7 +449,11 @@
 				headers: {
 					'X-WP-Nonce': wpllmseo_admin.nonce,
 					'Content-Type': 'application/json'
-				}
+				},
+				body: JSON.stringify({
+					limit: 5, // Optimized for token usage
+					bypass_cooldown: false
+				})
 			})
 			.then(response => response.json())
 			.then(result => {
@@ -461,10 +465,16 @@
 				}
 
 				if (result.success) {
-					this.showNotice('Worker executed successfully! Processed ' + (result.data?.processed || 0) + ' items.', 'success');
+					const processed = result.data?.processed || 0;
+					this.showNotice('Worker executed successfully! Processed ' + processed + ' items. Next run available in 24 hours.', 'success');
 					setTimeout(() => location.reload(), 1500);
 				} else {
-					this.showNotice('Worker execution failed: ' + (result.message || 'Unknown error'), 'error');
+					// Check if cooldown is active
+					if (result.data?.cooldown_active) {
+						this.showNotice('Cooldown active: ' + result.message, 'warning');
+					} else {
+						this.showNotice('Worker execution failed: ' + (result.message || 'Unknown error'), 'error');
+					}
 				}
 			})
 			.catch(error => {
