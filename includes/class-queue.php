@@ -66,6 +66,18 @@ class WPLLMSEO_Queue {
 		$snippet_id = isset( $payload['snippet_id'] ) ? absint( $payload['snippet_id'] ) : null;
 		$payload_json = wp_json_encode( $payload );
 
+		// Check for existing duplicate job (same type, post_id, snippet_id, and status queued/processing)
+		$existing_job = $this->find_duplicate_job( $job_type, $post_id, $snippet_id );
+		
+		if ( $existing_job ) {
+			$this->logger->debug(
+				sprintf( 'Duplicate job skipped: %s (Existing ID: %d)', $job_type, $existing_job->id ),
+				$payload,
+				'queue.log'
+			);
+			return $existing_job->id; // Return existing job ID instead of creating duplicate
+		}
+
 		$result = $wpdb->insert(
 			$this->table_name,
 			array(
@@ -101,6 +113,61 @@ class WPLLMSEO_Queue {
 		);
 
 		return false;
+	}
+
+	/**
+	 * Find duplicate job in the queue
+	 *
+	 * Checks for existing job with same type, post_id, snippet_id that is queued or processing.
+	 *
+	 * @param string   $job_type    Job type.
+	 * @param int|null $post_id     Post ID (optional).
+	 * @param int|null $snippet_id  Snippet ID (optional).
+	 * @return object|null Existing job object or null if no duplicate found.
+	 */
+	private function find_duplicate_job( $job_type, $post_id = null, $snippet_id = null ) {
+		global $wpdb;
+
+		// Build WHERE conditions
+		$where_conditions = array();
+		$where_values = array();
+
+		// Job type (required)
+		$where_conditions[] = 'job_type = %s';
+		$where_values[] = $job_type;
+
+		// Post ID (if provided)
+		if ( null !== $post_id ) {
+			$where_conditions[] = 'post_id = %d';
+			$where_values[] = $post_id;
+		} else {
+			$where_conditions[] = 'post_id IS NULL';
+		}
+
+		// Snippet ID (if provided)
+		if ( null !== $snippet_id ) {
+			$where_conditions[] = 'snippet_id = %d';
+			$where_values[] = $snippet_id;
+		} else {
+			$where_conditions[] = 'snippet_id IS NULL';
+		}
+
+		// Only check queued or processing jobs (not completed or failed)
+		$where_conditions[] = "status IN ('queued', 'processing')";
+
+		$where_clause = implode( ' AND ', $where_conditions );
+
+		// If we have values to prepare, use prepare; otherwise use direct query
+		if ( ! empty( $where_values ) ) {
+			$query = $wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE {$where_clause} LIMIT 1",
+				...$where_values
+			);
+		} else {
+			$query = "SELECT * FROM {$this->table_name} WHERE {$where_clause} LIMIT 1";
+		}
+
+		return $wpdb->get_row( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -494,6 +561,45 @@ class WPLLMSEO_Queue {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Remove duplicate jobs from the queue
+	 *
+	 * Keeps the oldest job for each unique combination of job_type, post_id, snippet_id
+	 * and removes newer duplicates with queued status.
+	 *
+	 * @return int Number of duplicate jobs removed.
+	 */
+	public function remove_duplicate_jobs() {
+		global $wpdb;
+
+		// Find duplicates by identifying jobs with same job_type, post_id, snippet_id
+		// Keep the oldest (min id), delete the rest
+		$duplicates_removed = $wpdb->query(
+			"DELETE t1 FROM {$this->table_name} t1
+			INNER JOIN {$this->table_name} t2 
+			WHERE t1.id > t2.id
+			AND t1.job_type = t2.job_type
+			AND (
+				(t1.post_id = t2.post_id OR (t1.post_id IS NULL AND t2.post_id IS NULL))
+			)
+			AND (
+				(t1.snippet_id = t2.snippet_id OR (t1.snippet_id IS NULL AND t2.snippet_id IS NULL))
+			)
+			AND t1.status IN ('queued', 'processing')
+			AND t2.status IN ('queued', 'processing')"
+		);
+
+		if ( $duplicates_removed ) {
+			$this->logger->info(
+				sprintf( 'Removed %d duplicate jobs from queue', $duplicates_removed ),
+				array( 'count' => $duplicates_removed ),
+				'queue.log'
+			);
+		}
+
+		return (int) $duplicates_removed;
 	}
 
 	/**

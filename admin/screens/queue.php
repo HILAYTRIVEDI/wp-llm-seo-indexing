@@ -68,6 +68,20 @@ if ( isset( $_POST['wpllmseo_clear_failed_regenerate'] ) && check_admin_referer(
 	echo '</p></div>';
 }
 
+// Handle remove duplicates action
+if ( isset( $_POST['wpllmseo_remove_duplicates'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
+	$queue_obj = new WPLLMSEO_Queue();
+	$removed = $queue_obj->remove_duplicate_jobs();
+	
+	echo '<div class="notice notice-success is-dismissible"><p>';
+	printf(
+		/* translators: %d: number of duplicate jobs removed */
+		esc_html__( 'Removed %d duplicate jobs from the queue.', 'wpllmseo' ),
+		(int) $removed
+	);
+	echo '</p></div>';
+}
+
 // Render page header.
 wpllmseo_render_header(
 	array(
@@ -229,6 +243,21 @@ $columns = array(
 			</form>
 		</div>
 	<?php endif; ?>
+
+	<!-- Duplicate Jobs Notice -->
+	<div class="notice notice-info inline" style="margin-top: 20px;">
+		<p>
+			<strong><?php esc_html_e( 'Queue Maintenance', 'wpllmseo' ); ?></strong><br>
+			<?php esc_html_e( 'If you see duplicate jobs in the queue, click below to remove them. The oldest job for each unique item will be kept.', 'wpllmseo' ); ?>
+		</p>
+		<form method="post" style="margin-top: 10px;">
+			<?php wp_nonce_field( 'wpllmseo_admin_action', 'wpllmseo_nonce' ); ?>
+			<button type="submit" name="wpllmseo_remove_duplicates" class="button button-secondary">
+				<span class="dashicons dashicons-admin-generic" style="margin-top: 3px;"></span>
+				<?php esc_html_e( 'Remove Duplicate Jobs', 'wpllmseo' ); ?>
+			</button>
+		</form>
+	</div>
 
 	<!-- Queue Table -->
 	<?php

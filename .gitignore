@@ -77,3 +77,4 @@ credentials.json
 ehthumbs.db
 Thumbs.db
 /var
+.DS_Store
