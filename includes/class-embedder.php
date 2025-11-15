@@ -47,6 +47,8 @@ class WPLLMSEO_Embedder {
         $provider_id = WPLLMSEO_Provider_Manager::get_active_provider( self::FEATURE );
         $model_id    = WPLLMSEO_Provider_Manager::get_active_model( self::FEATURE );
 
+        wpllmseo_log( sprintf( 'Embedder resolving provider/model: provider=%s model=%s', $provider_id, $model_id ), 'debug' );
+
         if ( empty( $provider_id ) || empty( $model_id ) ) {
             return new WP_Error( 'no_provider', 'No embedding provider/model configured' );
         }
@@ -76,6 +78,7 @@ class WPLLMSEO_Embedder {
             }
 
             // Fall back to provider call per-item.
+            wpllmseo_log( sprintf( 'Calling provider.generate_embedding for provider=%s model=%s', $provider_id, $model_id ), 'debug', array( 'text_preview' => substr( $text, 0, 120 ) ) );
             $res = $provider->generate_embedding( $text, $model_id, $api_key, $config );
             if ( is_wp_error( $res ) ) {
                 $results[ $i ] = $res;

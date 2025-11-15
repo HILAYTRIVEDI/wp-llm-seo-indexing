@@ -468,9 +468,9 @@ class WPLLMSEO_Queue {
 			'total'      => 0,
 		);
 
-		$results = $wpdb->get_results(
-			$wpdb->prepare( "SELECT status, COUNT(*) as count FROM %s GROUP BY status", $this->table_name )
-		);
+		// Query grouped counts from the queue table. Use proper table name substitution.
+		$query = "SELECT status, COUNT(*) as count FROM {$this->table_name} GROUP BY status";
+		$results = $wpdb->get_results( $query );
 
 		foreach ( $results as $row ) {
 			$stats[ $row->status ] = absint( $row->count );
@@ -492,13 +492,12 @@ class WPLLMSEO_Queue {
 		$days = absint( $days );
 		$date = date( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		$deleted = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM %s WHERE status IN ('completed', 'failed') AND updated_at < %s",
-				$this->table_name,
-				$date
-			)
+		// Use validated table name directly; prepare only the datetime value.
+		$query = $wpdb->prepare(
+			"DELETE FROM {$this->table_name} WHERE status IN ('completed', 'failed') AND updated_at < %s",
+			$date
 		);
+		$deleted = $wpdb->query( $query );
 
 		if ( $deleted ) {
 			$this->logger->info(
@@ -521,13 +520,12 @@ class WPLLMSEO_Queue {
 
 		$stale_time = date( 'Y-m-d H:i:s', strtotime( '-5 minutes' ) );
 
-		$unlocked = $wpdb->query(
-			$wpdb->prepare(
-				"UPDATE %s SET locked = 0, status = 'queued' WHERE locked = 1 AND updated_at < %s",
-				$this->table_name,
-				$stale_time
-			)
+		// Use validated table name directly; prepare only the datetime value.
+		$query = $wpdb->prepare(
+			"UPDATE {$this->table_name} SET locked = 0, status = 'queued' WHERE locked = 1 AND updated_at < %s",
+			$stale_time
 		);
+		$unlocked = $wpdb->query( $query );
 
 		if ( $unlocked ) {
 			$this->logger->warning(
@@ -549,7 +547,8 @@ class WPLLMSEO_Queue {
 		global $wpdb;
 
 		// Use DELETE with caution; TRUNCATE is more destructive and may require explicit privileges.
-		$result = $wpdb->query( $wpdb->prepare( "DELETE FROM %s", $this->table_name ) );
+		// Table name is validated in constructor; run direct DELETE query.
+		$result = $wpdb->query( "DELETE FROM {$this->table_name}" );
 
 		if ( $result ) {
 			$this->logger->warning(

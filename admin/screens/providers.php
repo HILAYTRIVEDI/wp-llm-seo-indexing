@@ -43,6 +43,16 @@ wpllmseo_render_header(
 ?>
 
 <div class="wpllmseo-providers">
+	<?php
+	// Quick debug info: show current active provider/model selections
+	$active_providers = $settings['active_providers'] ?? array();
+	$active_models = $settings['active_models'] ?? array();
+	?>
+	<div class="notice notice-info inline">
+		<p><strong><?php esc_html_e( 'Active assignments (embedding/generation):', 'wpllmseo' ); ?></strong>
+		<?php echo esc_html( 'Providers: ' . wp_json_encode( $active_providers ) ); ?>
+		<?php echo '<br/>' . esc_html( 'Models: ' . wp_json_encode( $active_models ) ); ?></p>
+	</div>
 	<?php if ( $updated ) : ?>
 		<div class="notice notice-success is-dismissible">
 			<p><?php esc_html_e( 'Provider settings saved successfully.', 'wpllmseo' ); ?></p>
@@ -376,6 +386,10 @@ jQuery(document).ready(function($) {
 		}
 
 		$modelRow.show();
+		
+		// Remember the currently selected model before reloading
+		var currentSelectedModel = $modelSelect.val();
+		
 		$modelSelect.html('<option value="">Loading models...</option>').prop('disabled', true);
 
 		$.ajax({
@@ -397,12 +411,17 @@ jQuery(document).ready(function($) {
 							if (model.recommended) {
 								label += ' (Recommended)';
 							}
-							html += '<option value="' + model.id + '">' + label + '</option>';
+							var selected = (currentSelectedModel && model.id === currentSelectedModel) ? ' selected' : '';
+							html += '<option value="' + model.id + '"' + selected + '>' + label + '</option>';
 						}
 					});
 					
 					$modelSelect.html(html).prop('disabled', false);
-					$modelRow.find('.wpllmseo-test-model').show();
+					
+					// Show test button if a model is selected
+					if ($modelSelect.val()) {
+						$modelRow.find('.wpllmseo-test-model').show();
+					}
 				}
 			}
 		});

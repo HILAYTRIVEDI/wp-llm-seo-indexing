@@ -109,7 +109,14 @@ class WPLLMSEO_Provider_Manager {
 
 		$settings['providers'][ $provider_id ] = $config;
 
-		return update_option( 'wpllmseo_settings', $settings );
+		$result = update_option( 'wpllmseo_settings', $settings );
+		if ( $result ) {
+			wpllmseo_log( 'Provider config saved', 'info', array( 'provider' => $provider_id, 'config_keys' => array_keys( $config ) ) );
+		} else {
+			wpllmseo_log( 'Provider config NOT saved', 'error', array( 'provider' => $provider_id ) );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -246,7 +253,9 @@ class WPLLMSEO_Provider_Manager {
 	 */
 	public static function get_active_model( string $feature ): ?string {
 		$settings = get_option( 'wpllmseo_settings', array() );
-		return $settings['active_models'][ $feature ] ?? null;
+		$model = $settings['active_models'][ $feature ] ?? null;
+		wpllmseo_log( sprintf( 'get_active_model called for feature=%s -> %s', $feature, $model ), 'debug' );
+		return $model;
 	}
 
 	/**

@@ -300,41 +300,49 @@ class WPLLMSEO_Admin {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
 		}
 
-		// Sanitize and save settings.
-		$settings = array(
-			'api_key'                         => isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '',
-			'model'                           => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : WPLLMSEO_GEMINI_MODEL,
-			'auto_index'                      => isset( $_POST['auto_index'] ) ? (bool) $_POST['auto_index'] : false,
-			'batch_size'                      => isset( $_POST['batch_size'] ) ? absint( $_POST['batch_size'] ) : 10,
-			'daily_token_limit'               => isset( $_POST['daily_token_limit'] ) ? absint( $_POST['daily_token_limit'] ) : 100000,
-			'enable_logging'                  => isset( $_POST['enable_logging'] ) ? (bool) $_POST['enable_logging'] : false,
-			'theme_mode'                      => isset( $_POST['theme_mode'] ) ? sanitize_text_field( wp_unslash( $_POST['theme_mode'] ) ) : 'auto',
-			'enable_ai_sitemap'               => isset( $_POST['enable_ai_sitemap'] ) ? (bool) $_POST['enable_ai_sitemap'] : false,
-			'content_license'                 => isset( $_POST['content_license'] ) ? sanitize_text_field( wp_unslash( $_POST['content_license'] ) ) : 'GPL',
-			// High Priority Features
-			'prefer_external_seo'             => isset( $_POST['prefer_external_seo'] ) ? (bool) $_POST['prefer_external_seo'] : false,
-			'use_similarity_threshold'        => isset( $_POST['use_similarity_threshold'] ) ? (bool) $_POST['use_similarity_threshold'] : false,
-			'enable_llm_jsonld'               => isset( $_POST['enable_llm_jsonld'] ) ? (bool) $_POST['enable_llm_jsonld'] : false,
-			// Medium Priority Features
-			'sitemap_hub_public'              => isset( $_POST['sitemap_hub_public'] ) ? (bool) $_POST['sitemap_hub_public'] : false,
-			'sitemap_hub_token'               => isset( $_POST['sitemap_hub_token'] ) ? sanitize_text_field( wp_unslash( $_POST['sitemap_hub_token'] ) ) : wp_generate_password( 32, false ),
-			'llm_api_public'                  => isset( $_POST['llm_api_public'] ) ? (bool) $_POST['llm_api_public'] : false,
-			'llm_api_token'                   => isset( $_POST['llm_api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['llm_api_token'] ) ) : wp_generate_password( 32, false ),
-			'llm_api_rate_limit'              => isset( $_POST['llm_api_rate_limit'] ) ? (bool) $_POST['llm_api_rate_limit'] : false,
-			'llm_api_rate_limit_value'        => isset( $_POST['llm_api_rate_limit_value'] ) ? absint( $_POST['llm_api_rate_limit_value'] ) : 100,
-			'enable_semantic_linking'         => isset( $_POST['enable_semantic_linking'] ) ? (bool) $_POST['enable_semantic_linking'] : false,
-			'semantic_linking_threshold'      => isset( $_POST['semantic_linking_threshold'] ) ? floatval( $_POST['semantic_linking_threshold'] ) : 0.75,
-			'semantic_linking_max_suggestions' => isset( $_POST['semantic_linking_max_suggestions'] ) ? absint( $_POST['semantic_linking_max_suggestions'] ) : 5,
-			// Lower Priority Features
-			'enable_media_embeddings'         => isset( $_POST['enable_media_embeddings'] ) ? (bool) $_POST['enable_media_embeddings'] : false,
-			'exec_guard_enabled'             => isset( $_POST['exec_guard_enabled'] ) ? (bool) $_POST['exec_guard_enabled'] : false,
-			'enable_crawler_logs'             => isset( $_POST['enable_crawler_logs'] ) ? (bool) $_POST['enable_crawler_logs'] : false,
-			'enable_html_renderer'            => isset( $_POST['enable_html_renderer'] ) ? (bool) $_POST['enable_html_renderer'] : false,
-			// MCP Integration (v1.1.0+)
-			'wpllmseo_enable_mcp'             => isset( $_POST['wpllmseo_enable_mcp'] ) ? (bool) $_POST['wpllmseo_enable_mcp'] : false,
-			'wpllmseo_mcp_respect_llms_txt'   => isset( $_POST['wpllmseo_mcp_respect_llms_txt'] ) ? (bool) $_POST['wpllmseo_mcp_respect_llms_txt'] : false,
-		);
+		// Merge sanitized values into existing settings to avoid overwriting unrelated keys.
+		$existing_settings = get_option( 'wpllmseo_settings', array() );
 
+		$settings = $existing_settings;
+
+		// Update explicit settings from POST (sanitize each input)
+		$settings['api_key'] = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : ( $settings['api_key'] ?? '' );
+		$settings['model'] = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : ( $settings['model'] ?? WPLLMSEO_GEMINI_MODEL );
+		$settings['auto_index'] = isset( $_POST['auto_index'] ) ? (bool) $_POST['auto_index'] : ( $settings['auto_index'] ?? false );
+		$settings['batch_size'] = isset( $_POST['batch_size'] ) ? absint( $_POST['batch_size'] ) : ( $settings['batch_size'] ?? 10 );
+		$settings['daily_token_limit'] = isset( $_POST['daily_token_limit'] ) ? absint( $_POST['daily_token_limit'] ) : ( $settings['daily_token_limit'] ?? 100000 );
+		$settings['enable_logging'] = isset( $_POST['enable_logging'] ) ? (bool) $_POST['enable_logging'] : ( $settings['enable_logging'] ?? false );
+		$settings['theme_mode'] = isset( $_POST['theme_mode'] ) ? sanitize_text_field( wp_unslash( $_POST['theme_mode'] ) ) : ( $settings['theme_mode'] ?? 'auto' );
+		$settings['enable_ai_sitemap'] = isset( $_POST['enable_ai_sitemap'] ) ? (bool) $_POST['enable_ai_sitemap'] : ( $settings['enable_ai_sitemap'] ?? false );
+		$settings['content_license'] = isset( $_POST['content_license'] ) ? sanitize_text_field( wp_unslash( $_POST['content_license'] ) ) : ( $settings['content_license'] ?? 'GPL' );
+
+		// High Priority Features
+		$settings['prefer_external_seo'] = isset( $_POST['prefer_external_seo'] ) ? (bool) $_POST['prefer_external_seo'] : ( $settings['prefer_external_seo'] ?? true );
+		$settings['use_similarity_threshold'] = isset( $_POST['use_similarity_threshold'] ) ? (bool) $_POST['use_similarity_threshold'] : ( $settings['use_similarity_threshold'] ?? true );
+		$settings['enable_llm_jsonld'] = isset( $_POST['enable_llm_jsonld'] ) ? (bool) $_POST['enable_llm_jsonld'] : ( $settings['enable_llm_jsonld'] ?? false );
+
+		// Medium Priority Features
+		$settings['sitemap_hub_public'] = isset( $_POST['sitemap_hub_public'] ) ? (bool) $_POST['sitemap_hub_public'] : ( $settings['sitemap_hub_public'] ?? false );
+		$settings['sitemap_hub_token'] = isset( $_POST['sitemap_hub_token'] ) ? sanitize_text_field( wp_unslash( $_POST['sitemap_hub_token'] ) ) : ( $settings['sitemap_hub_token'] ?? wp_generate_password( 32, false ) );
+		$settings['llm_api_public'] = isset( $_POST['llm_api_public'] ) ? (bool) $_POST['llm_api_public'] : ( $settings['llm_api_public'] ?? false );
+		$settings['llm_api_token'] = isset( $_POST['llm_api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['llm_api_token'] ) ) : ( $settings['llm_api_token'] ?? wp_generate_password( 32, false ) );
+		$settings['llm_api_rate_limit'] = isset( $_POST['llm_api_rate_limit'] ) ? (bool) $_POST['llm_api_rate_limit'] : ( $settings['llm_api_rate_limit'] ?? true );
+		$settings['llm_api_rate_limit_value'] = isset( $_POST['llm_api_rate_limit_value'] ) ? absint( $_POST['llm_api_rate_limit_value'] ) : ( $settings['llm_api_rate_limit_value'] ?? 100 );
+		$settings['enable_semantic_linking'] = isset( $_POST['enable_semantic_linking'] ) ? (bool) $_POST['enable_semantic_linking'] : ( $settings['enable_semantic_linking'] ?? false );
+		$settings['semantic_linking_threshold'] = isset( $_POST['semantic_linking_threshold'] ) ? floatval( $_POST['semantic_linking_threshold'] ) : ( $settings['semantic_linking_threshold'] ?? 0.75 );
+		$settings['semantic_linking_max_suggestions'] = isset( $_POST['semantic_linking_max_suggestions'] ) ? absint( $_POST['semantic_linking_max_suggestions'] ) : ( $settings['semantic_linking_max_suggestions'] ?? 5 );
+
+		// Lower Priority Features
+		$settings['enable_media_embeddings'] = isset( $_POST['enable_media_embeddings'] ) ? (bool) $_POST['enable_media_embeddings'] : ( $settings['enable_media_embeddings'] ?? false );
+		$settings['exec_guard_enabled'] = isset( $_POST['exec_guard_enabled'] ) ? (bool) $_POST['exec_guard_enabled'] : ( $settings['exec_guard_enabled'] ?? false );
+		$settings['enable_crawler_logs'] = isset( $_POST['enable_crawler_logs'] ) ? (bool) $_POST['enable_crawler_logs'] : ( $settings['enable_crawler_logs'] ?? false );
+		$settings['enable_html_renderer'] = isset( $_POST['enable_html_renderer'] ) ? (bool) $_POST['enable_html_renderer'] : ( $settings['enable_html_renderer'] ?? false );
+
+		// MCP Integration (v1.1.0+)
+		$settings['wpllmseo_enable_mcp'] = isset( $_POST['wpllmseo_enable_mcp'] ) ? (bool) $_POST['wpllmseo_enable_mcp'] : ( $settings['wpllmseo_enable_mcp'] ?? false );
+		$settings['wpllmseo_mcp_respect_llms_txt'] = isset( $_POST['wpllmseo_mcp_respect_llms_txt'] ) ? (bool) $_POST['wpllmseo_mcp_respect_llms_txt'] : ( $settings['wpllmseo_mcp_respect_llms_txt'] ?? true );
+
+		// Persist merged settings
 		update_option( 'wpllmseo_settings', $settings );
 		
 		// Flush LLMs.txt cache if settings changed
@@ -438,8 +446,9 @@ class WPLLMSEO_Admin {
 			$settings['active_providers'] = array_map( 'sanitize_text_field', $_POST['active_providers'] );
 		}
 		if ( isset( $_POST['active_models'] ) && is_array( $_POST['active_models'] ) ) {
-			wpllmseo_log( 'Saving active models', 'debug' );
+			wpllmseo_log( 'Saving active models (raw post)', 'debug', array( 'post_active_models' => $_POST['active_models'] ) );
 			$settings['active_models'] = array_map( 'sanitize_text_field', $_POST['active_models'] );
+			wpllmseo_log( 'Saving active models (sanitized)', 'debug', array( 'settings_active_models' => $settings['active_models'] ) );
 		}
 
 		$update_result = update_option( 'wpllmseo_settings', $settings );
