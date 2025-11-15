@@ -72,6 +72,9 @@
 - ✅ **Worker Management** - Automatic retry logic, job prioritization, and concurrency control
 - ✅ **Caching Layer** - Transient caching for frequently accessed data and sitemap generation
 - ✅ **Rate Limiting** - API call throttling to prevent quota exhaustion
+- ✅ **Token Usage Tracking** - Daily token limits with real-time monitoring to control API costs
+- ✅ **24-Hour Cooldowns** - Prevents excessive processing with configurable cooldown periods
+- ✅ **Smart Scheduling** - Optimized cron jobs run during off-peak hours (2-4 AM)
 
 #### Administration & Monitoring
 - ✅ **Real-time Analytics Dashboard** - Visual insights into indexing status, queue performance, and snippet statistics
@@ -349,10 +352,13 @@ Settings → AI Sitemap → Enable/Disable checkbox
 - `failed` - Error occurred (with error details)
 
 **Processing:**
-- Cron runs every minute (`wpllmseo_worker_event`)
-- Processes up to 20 jobs per run
+- Cron runs daily at 2:00 AM (`wpllmseo_worker_event`)
+- Processes up to 5 jobs per run (optimized for token usage)
 - Automatic retry on failure (up to 3 attempts)
 - Job locking prevents duplicate processing
+- 24-hour cooldown between runs
+- Token limit check before each job
+- Stops processing if daily limit reached
 
 ---
 
@@ -395,8 +401,15 @@ Navigate to **WP LLM SEO** in WordPress admin to access:
 - **Manual Regenerate** - Force rebuild sitemap cache
 
 **Performance Settings:**
-- **Queue Batch Size** - Jobs processed per worker run (default: 20)
+- **Queue Batch Size** - Jobs processed per worker run (default: 5)
+- **Daily Token Limit** - Maximum tokens per day (default: 100,000)
 - **API Rate Limit** - Delay between Gemini API calls (ms)
+
+**Token Usage Display:**
+- Shows current daily token usage
+- Displays percentage of limit used
+- Real-time tracking updates
+- Helps monitor and control API costs
 
 ### 📝 Snippets Screen
 
@@ -423,10 +436,17 @@ Navigate to **WP LLM SEO** in WordPress admin to access:
 - Error messages (for failed jobs)
 
 **Actions:**
+- **Process Queue** - Manually trigger worker (24-hour cooldown enforced)
+- **Clear Completed** - Remove successful jobs from queue
 - Add to Queue (manual job creation)
-- Process Queue (run worker)
-- Clear completed jobs
 - Retry failed jobs
+
+**Cooldown Protection:**
+- Manual runs limited to once per 24 hours
+- Clear warning message when cooldown active
+- Shows time until next available run
+- Prevents accidental excessive API usage
+- WP-CLI bypass available for emergencies
 
 ### 📋 Logs Screen
 
@@ -439,10 +459,11 @@ Navigate to **WP LLM SEO** in WordPress admin to access:
 
 **Log Types:**
 - `plugin.log` - General plugin activity
-- `worker.log` - Queue processing logs
+- `worker.log` - Queue processing logs with token usage stats
 - `snippet.log` - Snippet operations
 - `rag.log` - RAG query logs
 - `api.log` - Gemini API calls
+- `token-usage.log` - Daily token consumption tracking
 
 ---
 
@@ -456,6 +477,7 @@ Navigate to **WP LLM SEO** in WordPress admin to access:
 - `class-router.php` - Custom rewrite rules (AI sitemap)
 - `class-capabilities.php` - Role-based permissions
 - `class-security.php` - Security validation
+- `class-token-tracker.php` - Token usage monitoring and limits
 
 **Capabilities Added:**
 - `wpllmseo_manage_settings` - Modify plugin settings
@@ -469,6 +491,13 @@ Navigate to **WP LLM SEO** in WordPress admin to access:
 - Input sanitization using WordPress functions
 - SQL injection prevention (prepared statements)
 - XSS protection (output escaping)
+
+**Token Management:**
+- Daily token limit enforcement (default: 100,000)
+- Real-time usage tracking
+- Automatic throttling when limit approached
+- Usage statistics in Settings page
+- Per-operation token estimation
 
 ### Module 2: Snippet System
 
@@ -732,6 +761,8 @@ Response: {
 **Run Worker (Process Queue)**
 ```bash
 wp llmseo worker run
+# Or with custom limit
+wp llmseo worker run --limit=10
 ```
 
 **Generate AI Sitemap**
@@ -752,6 +783,22 @@ wp llmseo queue clear --status=completed
 **View Stats**
 ```bash
 wp llmseo stats
+```
+
+**Check Token Usage**
+```bash
+wp option get wpllmseo_token_usage --format=json
+```
+
+**Reset Cooldowns (Emergency)**
+```bash
+wp option delete wpllmseo_worker_last_run
+wp option delete wpllmseo_worker_last_manual_run
+```
+
+**Migrate Cron Schedule (One-time)**
+```bash
+wp eval-file wp-content/plugins/wp-llm-seo-indexing/migrate-cron-schedule.php
 ```
 
 ---
@@ -879,28 +926,242 @@ CREATE TABLE wpllmseo_logs (
 
 ## Cron Jobs
 
-### Worker Cron
+### Worker Cron (Optimized)
 
 **Hook:** `wpllmseo_worker_event`  
-**Schedule:** Every minute (`wpllmseo_every_minute`)  
-**Action:** Process background queue (up to 20 jobs)
+**Schedule:** Daily at 2:00 AM  
+**Action:** Process background queue (up to 5 jobs per run)  
+**Cooldown:** 24 hours between automatic runs
 
 **Registration:**
 ```php
 if ( ! wp_next_scheduled( 'wpllmseo_worker_event' ) ) {
-    wp_schedule_event( time(), 'wpllmseo_every_minute', 'wpllmseo_worker_event' );
+    wp_schedule_event( strtotime( '02:00:00' ), 'daily', 'wpllmseo_worker_event' );
 }
 ```
+
+**Token Optimization:**
+- Checks daily token limit before processing
+- Stops automatically if limit reached
+- Logs token usage for monitoring
+- Prevents runaway API costs
 
 ### AI Sitemap Regeneration
 
 **Hook:** `wpllmseo_generate_ai_sitemap_daily`  
-**Schedule:** Daily  
+**Schedule:** Daily at 3:00 AM  
 **Action:** Rebuild JSONL sitemap cache
 
 **Manual Trigger:**
 ```bash
 wp cron event run wpllmseo_generate_ai_sitemap_daily
+```
+
+### MCP Token Cleanup
+
+**Hook:** `wpllmseo_cleanup_expired_tokens`  
+**Schedule:** Daily at 4:00 AM  
+**Action:** Clean up expired MCP authentication tokens
+
+### Cron Schedule Summary
+
+| Cron Job | Schedule | Time | Purpose |
+|----------|----------|------|---------|
+| Worker | Daily | 2:00 AM | Process embedding queue |
+| AI Sitemap | Daily | 3:00 AM | Regenerate JSONL sitemap |
+| Token Cleanup | Daily | 4:00 AM | Remove expired tokens |
+
+**Migration Note:** If upgrading from a previous version that ran the worker every minute, run the migration script:
+```bash
+wp eval-file wp-content/plugins/wp-llm-seo-indexing/migrate-cron-schedule.php
+```
+
+---
+
+## Token Optimization & Cost Control
+
+### 💰 Overview
+
+The plugin includes comprehensive token usage optimization to prevent excessive API costs and ensure predictable billing.
+
+### 📊 Token Tracking System
+
+**Real-Time Monitoring:**
+- Tracks every API call to Gemini
+- Calculates daily token consumption
+- Displays usage in Settings page
+- Logs detailed usage in `token-usage.log`
+
+**Daily Limits:**
+- Default: 100,000 tokens per day
+- Configurable in Settings → Daily Token Limit
+- Automatic enforcement before each job
+- Worker stops processing if limit reached
+- Resets daily at midnight UTC
+
+**Usage Display:**
+Settings page shows:
+- Tokens used today: `15,234 / 100,000`
+- Percentage: `15.2%`
+- Status indicator (green/yellow/red)
+
+### 🛡️ Cooldown Protection
+
+**Manual Runs (Process Queue Button):**
+- 24-hour cooldown between clicks
+- Clear warning message when active
+- Shows time until next available run
+- Example: "Please wait 18 hours before running again"
+- Prevents accidental excessive API usage
+
+**Automatic Runs (Cron):**
+- 24-hour cooldown between scheduled runs
+- Last run timestamp tracked
+- Skips execution if cooldown active
+- Logged in `worker.log`
+
+**Bypass Cooldown (Emergencies Only):**
+```bash
+# WP-CLI can bypass cooldown
+wp llmseo worker run --limit=5
+```
+
+### ⚙️ Optimization Features
+
+**Smart Scheduling:**
+- Worker runs once daily at 2:00 AM (not every minute)
+- **99.9% reduction** in cron executions
+- Off-peak hours minimize server impact
+- Predictable processing windows
+
+**Batch Size Optimization:**
+- Reduced from 20 to 5 jobs per run
+- **75% reduction** in tokens per execution
+- More frequent completions with less cost
+- Configurable in settings
+
+**Queue Management:**
+- No auto-triggering on job creation
+- Manual triggering only when needed
+- Better control over processing timing
+- Prevents rapid-fire API calls
+
+**Token-Aware Processing:**
+- Checks token limit before each job
+- Estimates tokens needed for operation
+- Stops if limit would be exceeded
+- Resumes next day automatically
+
+### 📈 Cost Savings Example
+
+**Before Optimization:**
+```
+Cron Schedule: Every minute (1,440 runs/day)
+Batch Size: 20 jobs per run
+Auto-trigger: On every content save
+Estimated: 200,000-500,000 tokens/day
+Monthly Cost: $40-$100 (@$0.01/1000 tokens)
+```
+
+**After Optimization:**
+```
+Cron Schedule: Daily (1 run/day)
+Batch Size: 5 jobs per run  
+Auto-trigger: Disabled
+Token Limit: 100,000/day enforced
+Estimated: 10,000-50,000 tokens/day
+Monthly Cost: $3-$15 (@$0.01/1000 tokens)
+Savings: 85-95% reduction
+```
+
+### 🔧 Configuration
+
+**Recommended Settings:**
+
+**Small Site** (<100 posts):
+- Daily Token Limit: 50,000
+- Batch Size: 5
+- Expected Monthly Cost: $1-5
+
+**Medium Site** (100-1000 posts):
+- Daily Token Limit: 100,000
+- Batch Size: 5-10
+- Expected Monthly Cost: $5-20
+
+**Large Site** (1000+ posts):
+- Daily Token Limit: 200,000
+- Batch Size: 10
+- Expected Monthly Cost: $15-50
+
+### 📋 Migration
+
+**Upgrading from Previous Version:**
+
+If you're upgrading from a version that ran the worker every minute, you **must** run the migration script:
+
+```bash
+cd wp-content/plugins/wp-llm-seo-indexing
+wp eval-file migrate-cron-schedule.php
+```
+
+**What the Migration Does:**
+1. Clears old every-minute cron schedule
+2. Sets up new daily schedule (2:00 AM)
+3. Resets cooldown timestamps
+4. Initializes token tracking
+5. Adds daily token limit setting
+
+**Manual Migration Steps:**
+1. Navigate to Settings → Daily Token Limit
+2. Verify it's set (default: 100,000)
+3. Go to WP Admin → Tools → Scheduled Events
+4. Confirm `wpllmseo_worker_event` shows "Daily"
+5. Check it's not showing `wpllmseo_every_minute`
+
+### 🎯 Monitoring Token Usage
+
+**Settings Page:**
+- Real-time usage display
+- Percentage of daily limit
+- Color-coded status indicator
+
+**Log Files:**
+```bash
+# View token usage log
+tail -f var/logs/token-usage.log
+
+# Example output:
+[2025-11-15 10:30:00] Token usage recorded: 1847 tokens for embed_post (Total today: 15234/100000)
+[2025-11-15 11:45:00] Token usage recorded: 2103 tokens for embed_snippet (Total today: 17337/100000)
+```
+
+**WP-CLI:**
+```bash
+# Check current usage
+wp option get wpllmseo_token_usage --format=json
+
+# Reset if needed
+wp option delete wpllmseo_token_usage
+```
+
+### ⚠️ Troubleshooting
+
+**"Daily token limit reached" message:**
+1. **Normal behavior** - Limit is working correctly
+2. **Wait until tomorrow** - Resets at midnight UTC
+3. **Increase limit** - Settings → Daily Token Limit
+4. **Check usage** - Review `token-usage.log`
+
+**Cooldown preventing manual runs:**
+1. **This is intentional** - Prevents excessive costs
+2. **Check next run time** - Shown in warning message
+3. **Use WP-CLI if urgent** - `wp llmseo worker run`
+4. **Plan ahead** - Schedule processing during off-peak hours
+
+**Want to disable cooldown** (not recommended):
+```php
+// In wp-config.php - USE WITH CAUTION
+define('WPLLMSEO_DISABLE_COOLDOWN', true);
 ```
 
 ---
@@ -917,10 +1178,12 @@ All logs stored in: `wp-content/plugins/wp-llm-seo-indexing/var/logs/`
 
 **Log Files:**
 - `plugin.log` - General plugin activity
-- `worker.log` - Queue processing
+- `worker.log` - Queue processing with token usage stats
 - `snippet.log` - Snippet operations
 - `rag.log` - RAG queries
 - `api.log` - Gemini API calls
+- `token-usage.log` - Token consumption tracking
+- `errors.log` - PHP errors and warnings
 
 ### Log Format
 
@@ -974,8 +1237,21 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004
 
 **❌ High API costs**
 - Reduce chunk size in settings (fewer chunks = fewer API calls)
+- Lower daily token limit in Settings → Daily Token Limit
 - Disable auto-indexing for post types you don't need
-- Set API rate limiting (Settings → API Rate Limit)
+- Monitor token usage in Settings page
+- Check `var/logs/token-usage.log` for detailed tracking
+- Worker now runs daily (not every minute) - saves 99.9% of API calls
+- 24-hour cooldowns prevent accidental overuse
+
+**❌ Worker cooldown message**
+- This is normal - cooldown protects against excessive API usage
+- Manual runs limited to once per 24 hours
+- Wait until cooldown expires, or use WP-CLI to bypass:
+```bash
+wp llmseo worker run --limit=5
+```
+- Check next run time in the warning message
 
 ### Debug Mode
 
@@ -1084,8 +1360,19 @@ wp llmseo sitemap regenerate
 
 1. **Content Change Detection** - Only re-index when content actually changes
 2. **Selective Indexing** - Exclude post types you don't need indexed
-3. **Batch API Calls** - Process multiple embeddings in single request (if supported)
-4. **Monitor Usage** - Check Google Cloud Console for API quotas
+3. **Token Limits** - Set daily token limit in Settings (default: 100,000)
+4. **Monitor Usage** - Check Settings page for real-time token tracking
+5. **Cooldown Protection** - 24-hour cooldowns prevent accidental overuse
+6. **Optimized Schedule** - Worker runs daily, not every minute (99.9% reduction)
+7. **Batch Processing** - Process 5 jobs per run to control token consumption
+8. **Smart Queueing** - No auto-triggering on job creation
+
+**Token Usage Example:**
+```
+Before optimization: ~500,000 tokens/day (every-minute cron)
+After optimization: ~10,000-50,000 tokens/day (daily cron + limits)
+Savings: 90-98% reduction in token usage
+```
 
 ---
 

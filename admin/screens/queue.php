@@ -177,38 +177,6 @@ $columns = array(
 		},
 	),
 );
-
-// Define row actions.
-$actions = array(
-	'view'   => array(
-		'label' => __( 'View', 'wpllmseo' ),
-		'url'   => function( $row ) {
-			return '#view-' . $row['id'];
-		},
-	),
-	'process' => array(
-		'label' => __( 'Process', 'wpllmseo' ),
-		'url'   => function( $row ) {
-			return wp_nonce_url(
-				admin_url( 'admin.php?page=wpllmseo_queue&action=process&item=' . $row['id'] ),
-				'wpllmseo_process_item'
-			);
-		},
-		'class' => 'wpllmseo-process-item',
-		'data'  => true,
-	),
-	'remove' => array(
-		'label' => __( 'Remove', 'wpllmseo' ),
-		'url'   => function( $row ) {
-			return wp_nonce_url(
-				admin_url( 'admin.php?page=wpllmseo_queue&action=remove&item=' . $row['id'] ),
-				'wpllmseo_remove_item'
-			);
-		},
-		'class' => 'wpllmseo-remove-item',
-		'data'  => true,
-	),
-);
 ?>
 
 <div class="wpllmseo-queue">
@@ -273,7 +241,6 @@ $actions = array(
 				'rows'     => $queue_items,
 				'id'       => 'queue-table',
 				'sortable' => true,
-				'actions'  => $actions,
 			)
 		);
 	}
