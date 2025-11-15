@@ -21,11 +21,17 @@ if ( ! current_user_can( 'manage_options' ) ) {
 // Handle regeneration request
 if ( isset( $_POST['wpllmseo_regenerate_all'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
 	global $wpdb;
-	
-	$queue_table = $wpdb->prefix . 'wpllmseo_jobs';
-	
-	// Clear all failed and pending jobs
-	$deleted = $wpdb->query( "DELETE FROM $queue_table WHERE status IN ('failed', 'pending')" );
+	require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+
+	$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+	if ( is_wp_error( $validated ) ) {
+		wp_die( esc_html__( 'Queue table not found or invalid.', 'wpllmseo' ) );
+	}
+
+	$queue_table = $validated;
+
+	// Clear all failed and pending jobs using prepared statement
+	$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM {$queue_table} WHERE status IN (%s, %s)", 'failed', 'pending' ) );
 	
 	// Get all published posts
 	$posts = get_posts(
@@ -81,12 +87,14 @@ if ( isset( $_POST['wpllmseo_regenerate_all'] ) && check_admin_referer( 'wpllmse
 		<h2><?php esc_html_e( 'Current Status', 'wpllmseo' ); ?></h2>
 		<?php
 		global $wpdb;
-		$queue_table = $wpdb->prefix . 'wpllmseo_jobs';
-		
+		require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+		$queue_table = is_wp_error( $validated ) ? $wpdb->prefix . 'wpllmseo_jobs' : $validated;
+
 		$stats = array(
-			'failed'  => $wpdb->get_var( "SELECT COUNT(*) FROM $queue_table WHERE status = 'failed'" ),
-			'pending' => $wpdb->get_var( "SELECT COUNT(*) FROM $queue_table WHERE status = 'pending'" ),
-			'running' => $wpdb->get_var( "SELECT COUNT(*) FROM $queue_table WHERE status = 'running'" ),
+			'failed'  => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", 'failed' ) ),
+			'pending' => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", 'pending' ) ),
+			'running' => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", 'running' ) ),
 		);
 		
 		$total_posts = wp_count_posts();

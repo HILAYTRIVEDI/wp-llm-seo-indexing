@@ -185,6 +185,21 @@ class WPLLMSEO_Installer_Upgrader {
 			INDEX idx_failed_at (failed_at)
 		) $charset_collate;";
 		dbDelta( $dead_letter_sql );
+
+		// Exec guard logs
+		$exec_logs_table = $wpdb->prefix . 'wpllmseo_exec_logs';
+		$exec_logs_sql   = "CREATE TABLE IF NOT EXISTS $exec_logs_table (
+			id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			user_id BIGINT(20) UNSIGNED DEFAULT NULL,
+			command TEXT DEFAULT NULL,
+			stdout LONGTEXT DEFAULT NULL,
+			stderr LONGTEXT DEFAULT NULL,
+			result TINYINT(1) DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			INDEX idx_user_id (user_id),
+			INDEX idx_created (created_at)
+		) $charset_collate;";
+		dbDelta( $exec_logs_sql );
 		
 		// Token table for two-stage candidate selection
 		$tokens_table = $wpdb->prefix . 'wpllmseo_tokens';
@@ -232,31 +247,38 @@ class WPLLMSEO_Installer_Upgrader {
 			'embedding_version' => "VARCHAR(32) DEFAULT 'v1'",
 		);
 		
+		require_once __DIR__ . '/helpers/class-db-helpers.php';
+
 		foreach ( $embedding_columns as $col => $definition ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $snippets_table LIKE '$col'" );
-			if ( empty( $column_exists ) ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query( "ALTER TABLE $snippets_table ADD COLUMN $col $definition" );
+			$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_snippets' );
+			if ( is_wp_error( $validated ) ) {
+				continue;
+			}
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, $col ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_snippets', "ADD COLUMN $col $definition" );
 			}
 		}
 		
 		// Add embedding metadata columns to chunks table
 		foreach ( $embedding_columns as $col => $definition ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $chunks_table LIKE '$col'" );
-			if ( empty( $column_exists ) ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN $col $definition" );
+			$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_chunks' );
+			if ( is_wp_error( $validated ) ) {
+				continue;
+			}
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, $col ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', "ADD COLUMN $col $definition" );
 			}
 		}
 		
 		// Add token_count to chunks table
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $chunks_table LIKE 'token_count'" );
-		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN token_count INT DEFAULT 0" );
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_chunks' );
+		if ( ! is_wp_error( $validated ) ) {
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, 'token_count' ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', 'ADD COLUMN token_count INT DEFAULT 0' );
+			}
 		}
 		
 		// Add job retry columns
@@ -269,66 +291,61 @@ class WPLLMSEO_Installer_Upgrader {
 		);
 		
 		foreach ( $job_columns as $col => $definition ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE '$col'" );
-			if ( empty( $column_exists ) ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN $col $definition" );
+			$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+			if ( is_wp_error( $validated ) ) {
+				continue;
+			}
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, $col ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', "ADD COLUMN $col $definition" );
 			}
 		}
 		
 		// Add missing indexes
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_status_locked_created ON $jobs_table (status, locked, created_at)" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_dedupe_key ON $jobs_table (dedupe_key)" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_post_id_chunk_index ON $chunks_table (post_id, chunk_index)" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "CREATE UNIQUE INDEX IF NOT EXISTS uniq_snippet_hash ON $snippets_table (snippet_hash)" );
+		// Create indexes via safe_alter_table wrapper where supported
+		WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD INDEX idx_status_locked_created (status, locked, created_at)' );
+		WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD INDEX idx_dedupe_key (dedupe_key)' );
+		WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', 'ADD INDEX idx_post_id_chunk_index (post_id, chunk_index)' );
+		WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_snippets', 'ADD UNIQUE INDEX uniq_snippet_hash (snippet_hash)' );
 
 		// === Legacy Migrations ===
 
 		// Check if is_preferred column exists in snippets
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $snippets_table LIKE 'is_preferred'" );
-		
-		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $snippets_table ADD COLUMN is_preferred TINYINT(1) DEFAULT 0 AFTER embedding" );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $snippets_table ADD INDEX idx_preferred (is_preferred)" );
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_snippets' );
+		if ( ! is_wp_error( $validated ) ) {
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, 'is_preferred' ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_snippets', 'ADD COLUMN is_preferred TINYINT(1) DEFAULT 0 AFTER embedding' );
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_snippets', 'ADD INDEX idx_preferred (is_preferred)' );
+			}
 		}
 
 		// Check if chunk_index exists in chunks
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $chunks_table LIKE 'chunk_index'" );
-		
-		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $chunks_table ADD COLUMN chunk_index INT DEFAULT 0 AFTER embedding" );
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_chunks' );
+		if ( ! is_wp_error( $validated ) ) {
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, 'chunk_index' ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', 'ADD COLUMN chunk_index INT DEFAULT 0 AFTER embedding' );
+			}
 		}
 
 		// Check if post_id column exists in jobs table (v1.1.1+)
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE 'post_id'" );
-		
-		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN post_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER job_type" );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $jobs_table ADD INDEX idx_post_id (post_id)" );
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+		if ( ! is_wp_error( $validated ) ) {
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, 'post_id' ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD COLUMN post_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER job_type' );
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD INDEX idx_post_id (post_id)' );
+			}
 		}
 
 		// Check if snippet_id column exists in jobs table (v1.1.1+)
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $jobs_table LIKE 'snippet_id'" );
-		
-		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $jobs_table ADD COLUMN snippet_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER post_id" );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$wpdb->query( "ALTER TABLE $jobs_table ADD INDEX idx_snippet_id (snippet_id)" );
+		if ( ! is_wp_error( $validated ) ) {
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, 'snippet_id' ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD COLUMN snippet_id BIGINT(20) UNSIGNED DEFAULT NULL AFTER post_id' );
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_jobs', 'ADD INDEX idx_snippet_id (snippet_id)' );
+			}
 		}
 	}
 
@@ -366,6 +383,7 @@ class WPLLMSEO_Installer_Upgrader {
 				'semantic_linking_max_suggestions' => 5,
 				// Lower Priority Features
 				'enable_media_embeddings'         => false,
+				'exec_guard_enabled'              => false,
 				'enable_crawler_logs'             => false,
 				'enable_html_renderer'            => false,
 				// MCP Integration (v1.1.0+)

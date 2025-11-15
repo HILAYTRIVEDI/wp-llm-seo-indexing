@@ -174,12 +174,11 @@ class WPLLMSEO_Rate_Limiter {
 	 */
 	public static function get_concurrent_jobs() {
 		global $wpdb;
-		
-		$table = $wpdb->prefix . 'wpllmseo_jobs';
-		
-		return (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$table} WHERE status = 'processing' AND locked = 1"
-		);
+		require_once __DIR__ . '/helpers/class-db-helpers.php';
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
+		$table = is_wp_error( $validated ) ? $wpdb->prefix . 'wpllmseo_jobs' : $validated;
+
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %s WHERE status = %s AND locked = %d", $table, 'processing', 1 ) );
 	}
 
 	/**
@@ -206,12 +205,10 @@ class WPLLMSEO_Rate_Limiter {
 		global $wpdb;
 		
 		// Delete all rate limit transients
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-				'_transient_' . self::TRANSIENT_PREFIX . '%'
-			)
-		);
+		require_once __DIR__ . '/helpers/class-db-helpers.php';
+		// Use options table constant safely
+		$options_table = $wpdb->options;
+		$wpdb->query( $wpdb->prepare( "DELETE FROM %s WHERE option_name LIKE %s", $options_table, '_transient_' . self::TRANSIENT_PREFIX . '%' ) );
 		
 		// Clear quota
 		delete_option( self::QUOTA_KEY );

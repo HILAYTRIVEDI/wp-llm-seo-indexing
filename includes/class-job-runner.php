@@ -34,6 +34,9 @@ class WPLLMSEO_Job_Runner {
 	public function __construct() {
 		$this->logger = new WPLLMSEO_Logger();
 		$this->queue = new WPLLMSEO_Queue();
+
+		// Register admin REST routes for manual trigger
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 	}
 
 	/**
@@ -229,6 +232,16 @@ class WPLLMSEO_Job_Runner {
 		$batch_size = isset( $payload['batch_size'] ) ? absint( $payload['batch_size'] ) : 50;
 		$offset = isset( $payload['offset'] ) ? absint( $payload['offset'] ) : 0;
 
+		// Cooldown enforcement: only allow once per 24 hours unless forced by admin.
+		require_once __DIR__ . '/helpers/class-worker-cooldown.php';
+		$force = ! empty( $payload['force'] );
+		if ( ! $force ) {
+			if ( ! WPLLMSEO_Worker_Cooldown::is_allowed( 'reindex_all' ) ) {
+				$this->logger->info( 'Reindex all skipped due to cooldown', array( 'offset' => $offset ), 'worker.log' );
+				return true;
+			}
+		}
+
 		$args = array(
 			'post_type'      => $post_types,
 			'post_status'    => 'publish',
@@ -266,6 +279,7 @@ class WPLLMSEO_Job_Runner {
 				'post_types' => $post_types,
 				'batch_size' => $batch_size,
 				'offset'     => $next_offset,
+				'force'      => isset( $payload['force'] ) ? boolval( $payload['force'] ) : false,
 			)
 		);
 
@@ -275,7 +289,51 @@ class WPLLMSEO_Job_Runner {
 			'worker.log'
 		);
 
+		// Record this run as the last run for cooldown purposes on first batch
+		if ( 0 === $offset ) {
+			WPLLMSEO_Worker_Cooldown::record_run( 'reindex_all' );
+		}
+
 		return true;
+	}
+
+	/**
+	 * Register REST routes for manual admin triggers
+	 */
+	public function register_rest_routes() {
+		register_rest_route(
+			'wpllmseo/v1',
+			'/admin/trigger-reindex',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'rest_trigger_reindex' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+				'args'                => array(
+					'force' => array(
+						'required' => false,
+						'type'     => 'boolean',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * REST callback that enqueues a forced reindex job (admin-only)
+	 */
+	public function rest_trigger_reindex( $request ) {
+		$force = $request->get_param( 'force' );
+
+		$queue = new WPLLMSEO_Queue();
+		$job_id = $queue->add( 'reindex_all', array( 'post_types' => array( 'post', 'page' ), 'batch_size' => 50, 'offset' => 0, 'force' => boolval( $force ) ) );
+
+		if ( ! $job_id ) {
+			return new WP_Error( 'enqueue_failed', 'Failed to enqueue reindex job' );
+		}
+
+		return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
 	}
 
 	/**

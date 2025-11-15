@@ -62,7 +62,6 @@ class WPLLMSEO_Crawler_Logs {
 	 */
 	public static function create_table() {
 		global $wpdb;
-
 		$table_name      = $wpdb->prefix . self::LOG_TABLE;
 		$charset_collate = $wpdb->get_charset_collate();
 
@@ -202,7 +201,9 @@ class WPLLMSEO_Crawler_Logs {
 	public static function log_request( $data ) {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::LOG_TABLE;
+		require_once __DIR__ . '/helpers/class-db-helpers.php';
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( self::LOG_TABLE );
+		$table_name = is_wp_error( $validated ) ? $wpdb->prefix . self::LOG_TABLE : $validated;
 
 		$wpdb->insert(
 			$table_name,
@@ -231,60 +232,24 @@ class WPLLMSEO_Crawler_Logs {
 	public static function get_stats( $days = 30 ) {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::LOG_TABLE;
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( self::LOG_TABLE );
+		$table_name = is_wp_error( $validated ) ? $wpdb->prefix . self::LOG_TABLE : $validated;
 		$since_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
 		// Total requests.
-		$total_requests = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE timestamp >= %s",
-				$since_date
-			)
-		);
+		$total_requests = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %s WHERE timestamp >= %s", $table_name, $since_date ) );
 
 		// Verified vs unverified.
-		$verified = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table_name} WHERE timestamp >= %s AND verified = 1",
-				$since_date
-			)
-		);
+		$verified = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %s WHERE timestamp >= %s AND verified = %d", $table_name, $since_date, 1 ) );
 
 		// By crawler type.
-		$by_crawler = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT crawler_type, COUNT(*) as count 
-				FROM {$table_name} 
-				WHERE timestamp >= %s 
-				GROUP BY crawler_type 
-				ORDER BY count DESC",
-				$since_date
-			)
-		);
+		$by_crawler = $wpdb->get_results( $wpdb->prepare( "SELECT crawler_type, COUNT(*) as count FROM %s WHERE timestamp >= %s GROUP BY crawler_type ORDER BY count DESC", $table_name, $since_date ) );
 
 		// By endpoint.
-		$by_endpoint = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT endpoint_type, COUNT(*) as count 
-				FROM {$table_name} 
-				WHERE timestamp >= %s 
-				GROUP BY endpoint_type 
-				ORDER BY count DESC",
-				$since_date
-			)
-		);
+		$by_endpoint = $wpdb->get_results( $wpdb->prepare( "SELECT endpoint_type, COUNT(*) as count FROM %s WHERE timestamp >= %s GROUP BY endpoint_type ORDER BY count DESC", $table_name, $since_date ) );
 
 		// Daily trend.
-		$daily_trend = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT DATE(timestamp) as date, COUNT(*) as count 
-				FROM {$table_name} 
-				WHERE timestamp >= %s 
-				GROUP BY DATE(timestamp) 
-				ORDER BY date ASC",
-				$since_date
-			)
-		);
+		$daily_trend = $wpdb->get_results( $wpdb->prepare( "SELECT DATE(timestamp) as date, COUNT(*) as count FROM %s WHERE timestamp >= %s GROUP BY DATE(timestamp) ORDER BY date ASC", $table_name, $since_date ) );
 
 		return array(
 			'total_requests' => intval( $total_requests ),
@@ -305,16 +270,10 @@ class WPLLMSEO_Crawler_Logs {
 	public static function get_recent_logs( $limit = 50 ) {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::LOG_TABLE;
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( self::LOG_TABLE );
+		$table_name = is_wp_error( $validated ) ? $wpdb->prefix . self::LOG_TABLE : $validated;
 
-		return $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$table_name} 
-				ORDER BY timestamp DESC 
-				LIMIT %d",
-				$limit
-			)
-		);
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %s ORDER BY timestamp DESC LIMIT %d", $table_name, $limit ) );
 	}
 
 	/**
@@ -325,15 +284,11 @@ class WPLLMSEO_Crawler_Logs {
 	public static function clear_old_logs( $days = 90 ) {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::LOG_TABLE;
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( self::LOG_TABLE );
+		$table_name = is_wp_error( $validated ) ? $wpdb->prefix . self::LOG_TABLE : $validated;
 		$since_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$table_name} WHERE timestamp < %s",
-				$since_date
-			)
-		);
+		$wpdb->query( $wpdb->prepare( "DELETE FROM %s WHERE timestamp < %s", $table_name, $since_date ) );
 	}
 
 	/**

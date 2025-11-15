@@ -181,11 +181,13 @@ class WPLLMSEO_Media_Embeddings {
 		// Try multiple methods.
 		$text = '';
 
-		// Method 1: pdftotext command (if available).
-		if ( function_exists( 'exec' ) ) {
+		// Method 1: pdftotext command (if available) via Exec Guard.
+		require_once __DIR__ . '/helpers/class-exec-guard.php';
+		if ( WPLLMSEO_Exec_Guard::is_available() ) {
 			$output = array();
-			exec( 'pdftotext ' . escapeshellarg( $file_path ) . ' -', $output );
-			if ( ! empty( $output ) ) {
+			$cmd    = 'pdftotext ' . escapeshellarg( $file_path ) . ' -';
+			$result = WPLLMSEO_Exec_Guard::run( $cmd, $output );
+			if ( $result === true && ! empty( $output ) ) {
 				$text = implode( "\n", $output );
 			}
 		}
@@ -283,11 +285,33 @@ class WPLLMSEO_Media_Embeddings {
 	private static function generate_embeddings( $chunks, $attachment_id ) {
 		$embedder = new WPLLMSEO_Embedder();
 
-		foreach ( $chunks as $chunk ) {
-			$result = $embedder->embed_chunk( $chunk );
-			if ( is_wp_error( $result ) ) {
-				return $result;
+		// Use batch embedder for efficiency and caching.
+		$results = $embedder->embed_chunks_batch( $chunks );
+
+		if ( is_wp_error( $results ) ) {
+			return $results;
+		}
+
+		// Persist embeddings per-chunk in attachment meta for now.
+		foreach ( $results as $index => $res ) {
+			if ( is_wp_error( $res ) ) {
+				// Log and continue
+				continue;
 			}
+
+			$embedding = $res['embedding'];
+			$chunk_text = $chunks[ $index ]['content'] ?? '';
+			$token_count = $chunks[ $index ]['token_count'] ?? str_word_count( $chunk_text );
+
+			require_once __DIR__ . '/helpers/class-db-helpers.php';
+			$meta = array(
+				'embedding_dim' => is_array( $embedding ) ? count( $embedding ) : null,
+				'token_count' => $token_count,
+				'checksum' => hash( 'sha256', wp_json_encode( $embedding ) ),
+				'version' => 'v1',
+			);
+
+			WPLLMSEO_DB_Helpers::upsert_chunk_embedding( $attachment_id, $index, $chunk_text, $embedding, $meta );
 		}
 
 		return true;
@@ -324,7 +348,8 @@ class WPLLMSEO_Media_Embeddings {
 		$indexed = get_post_meta( $attachment_id, '_wpllmseo_indexed', true );
 
 		if ( $indexed ) {
-			$chunk_count = get_post_meta( $attachment_id, '_wpllmseo_chunk_count', true );
+			require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-db-helpers.php';
+			$chunk_count = WPLLMSEO_DB_Helpers::get_chunk_count( $attachment_id );
 			echo '<span class="dashicons dashicons-yes-alt" style="color:#00a32a;"></span> ';
 			echo esc_html( $chunk_count ) . ' chunks';
 		} else {
@@ -429,10 +454,11 @@ class WPLLMSEO_Media_Embeddings {
 			return $result;
 		}
 
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-db-helpers.php';
 		return rest_ensure_response(
 			array(
 				'success'     => true,
-				'chunk_count' => get_post_meta( $attachment_id, '_wpllmseo_chunk_count', true ),
+				'chunk_count' => WPLLMSEO_DB_Helpers::get_chunk_count( $attachment_id ),
 				'indexed_at'  => get_post_meta( $attachment_id, '_wpllmseo_indexed', true ),
 			)
 		);
@@ -483,7 +509,7 @@ class WPLLMSEO_Media_Embeddings {
 			if ( $indexed ) {
 				$stats['indexed_media']++;
 				$stats['by_type'][ $mime_type ]['indexed']++;
-				$chunk_count = get_post_meta( $attachment_id, '_wpllmseo_chunk_count', true );
+				$chunk_count = WPLLMSEO_DB_Helpers::get_chunk_count( $attachment_id );
 				$stats['total_chunks'] += intval( $chunk_count );
 			}
 		}

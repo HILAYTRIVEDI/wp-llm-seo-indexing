@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<ruleset name="WPLLMSEO">
+  <description>PHP_CodeSniffer ruleset for WP LLM SEO Indexing</description>
+  <rule ref="WordPress-Core" />
+  <rule ref="WordPress-Extra" />
+  <rule ref="PSR12" />
+</ruleset>

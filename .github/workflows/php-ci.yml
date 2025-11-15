@@ -1,0 +1,50 @@
+name: PHP CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  php-cs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+      - name: Install composer deps
+        run: composer install --no-progress --no-interaction --prefer-dist
+      - name: Run PHPCS
+        run: ./vendor/bin/phpcs -p --standard=.phpcs.xml
+
+  phpunit:
+    runs-on: ubuntu-latest
+    needs: php-cs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+      - name: Install composer deps
+        run: composer install --no-progress --no-interaction --prefer-dist
+      - name: Run PHPUnit
+        run: ./vendor/bin/phpunit --configuration phpunit.xml.dist --colors=always
+
+  phpstan:
+    runs-on: ubuntu-latest
+    needs: phpunit
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+      - name: Install composer deps
+        run: composer install --no-progress --no-interaction --prefer-dist
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse -c phpstan.neon.dist
