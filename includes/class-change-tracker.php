@@ -89,7 +89,8 @@ class WPLLMSEO_Change_Tracker {
 				self::queue_reindex( $post_id, 'content_changed' );
 
 				// Log the change.
-				WPLLMSEO_Logger::info( 
+				$logger = new WPLLMSEO_Logger();
+				$logger->info( 
 					sprintf( 
 						'Content changed for post %d (%s). Queued for re-indexing.', 
 						$post_id, 
@@ -98,7 +99,8 @@ class WPLLMSEO_Change_Tracker {
 				);
 			} else {
 				// Content changed but not enough to warrant re-indexing.
-				WPLLMSEO_Logger::debug( 
+				$logger = new WPLLMSEO_Logger();
+				$logger->debug( 
 					sprintf( 
 						'Content change for post %d (%s) below similarity threshold. Skipping re-index.', 
 						$post_id, 
