@@ -227,6 +227,59 @@ function wpllmseo_init() {
 	if ( class_exists( 'WPLLMSEO_MCP_Adapter' ) ) {
 		WPLLMSEO_MCP_Adapter::init();
 	}
+	
+	// Initialize AI Index System (v1.3.0+)
+	if ( class_exists( 'WPLLMSEO_API_Auth' ) ) {
+		WPLLMSEO_API_Auth::init();
+	}
+	if ( class_exists( 'WPLLMSEO_AI_Index_REST' ) ) {
+		WPLLMSEO_AI_Index_REST::init();
+	}
+	
+	// Add template redirect for AI Index static files.
+	add_action( 'template_redirect', 'wpllmseo_serve_ai_index_files' );
+}
+add_action( 'plugins_loaded', 'wpllmseo_init' );
+
+/**
+ * Serve AI Index static files.
+ */
+function wpllmseo_serve_ai_index_files() {
+	global $wp_query;
+
+	// Serve manifest.
+	if ( get_query_var( 'wpllmseo_ai_manifest' ) ) {
+		$response = WPLLMSEO_AI_Index_REST::get_manifest( new WP_REST_Request( 'GET' ) );
+		
+		header( 'Content-Type: application/json' );
+		header( 'Cache-Control: public, max-age=3600' );
+		header( 'Access-Control-Allow-Origin: *' );
+		
+		echo wp_json_encode( $response->data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
+		exit;
+	}
+
+	// Serve NDJSON files.
+	$file_type = get_query_var( 'wpllmseo_ai_file' );
+	if ( $file_type ) {
+		$upload_dir = wp_upload_dir();
+		$file_path = $upload_dir['basedir'] . '/ai-index/' . $file_type . '.ndjson.gz';
+
+		if ( ! file_exists( $file_path ) ) {
+			status_header( 404 );
+			wp_die( 'File not found' );
+		}
+
+		header( 'Content-Type: application/x-ndjson' );
+		header( 'Content-Encoding: gzip' );
+		header( 'Content-Disposition: inline; filename="' . basename( $file_path ) . '"' );
+		header( 'Content-Length: ' . filesize( $file_path ) );
+		header( 'Cache-Control: public, max-age=86400' );
+		header( 'Access-Control-Allow-Origin: *' );
+
+		readfile( $file_path );
+		exit;
+	}
 }
 add_action( 'plugins_loaded', 'wpllmseo_init' );
 
@@ -305,6 +358,14 @@ if ( ! wp_next_scheduled( 'wpllmseo_prune_exec_logs_daily' ) ) {
 add_action( 'wpllmseo_cleanup_expired_tokens', function() {
 	WPLLMSEO_MCP_Auth::cleanup_expired_tokens();
 } );
+
+/**
+ * Load WP-CLI commands if WP-CLI is available.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once WPLLMSEO_PLUGIN_DIR . 'wp-cli/class-cli-worker.php';
+	require_once WPLLMSEO_PLUGIN_DIR . 'wp-cli/ai-index-commands.php';
+}
 
 /**
  * Log errors to file for debugging.

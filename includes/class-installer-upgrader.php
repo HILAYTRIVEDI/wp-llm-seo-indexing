@@ -329,6 +329,35 @@ class WPLLMSEO_Installer_Upgrader {
 			}
 		}
 
+		// Add AI index columns to chunks table (v1.3.0+)
+		$ai_index_columns = array(
+			'chunk_id'        => 'VARCHAR(64) DEFAULT NULL',
+			'text'            => 'LONGTEXT DEFAULT NULL',
+			'start_word'      => 'INT DEFAULT 0',
+			'end_word'        => 'INT DEFAULT 0',
+			'word_count'      => 'INT DEFAULT 0',
+			'char_count'      => 'INT DEFAULT 0',
+			'token_estimate'  => 'INT DEFAULT 0',
+			'embedding_model' => 'VARCHAR(128) DEFAULT NULL',
+		);
+		
+		foreach ( $ai_index_columns as $col => $definition ) {
+			$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_chunks' );
+			if ( is_wp_error( $validated ) ) {
+				continue;
+			}
+			$r = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM %s LIKE %s", $validated, $col ) );
+			if ( empty( $r ) ) {
+				WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', "ADD COLUMN $col $definition" );
+			}
+		}
+		
+		// Add unique index on chunk_id if it doesn't exist
+		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_chunks' );
+		if ( ! is_wp_error( $validated ) ) {
+			WPLLMSEO_DB_Helpers::safe_alter_table( 'wpllmseo_chunks', 'ADD UNIQUE INDEX idx_chunk_id (chunk_id)' );
+		}
+
 		// Check if post_id column exists in jobs table (v1.1.1+)
 		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
 		if ( ! is_wp_error( $validated ) ) {

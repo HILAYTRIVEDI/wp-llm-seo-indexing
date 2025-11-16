@@ -178,18 +178,26 @@ class WPLLMSEO_Admin {
 			array( __CLASS__, 'render_migration' )
 		);
 
-		// Health Check submenu.
-		add_submenu_page(
-			'wpllmseo_dashboard',
-			__( 'Health Check', 'wpllmseo' ),
-			__( 'Health Check', 'wpllmseo' ),
-			'manage_options',
-			'wpllmseo_health',
-			array( __CLASS__, 'render_health_check' )
-		);
-	}
+	// Health Check submenu.
+	add_submenu_page(
+		'wpllmseo_dashboard',
+		__( 'Health Check', 'wpllmseo' ),
+		__( 'Health Check', 'wpllmseo' ),
+		'manage_options',
+		'wpllmseo_health',
+		array( __CLASS__, 'render_health_check' )
+	);
 
-	/**
+	// AI Index submenu.
+	add_submenu_page(
+		'wpllmseo_dashboard',
+		__( 'AI Index', 'wpllmseo' ),
+		__( 'AI Index', 'wpllmseo' ),
+		'manage_options',
+		'wpllmseo_ai_index',
+		array( __CLASS__, 'render_ai_index' )
+	);
+}	/**
 	 * Enqueue admin assets only on plugin pages.
 	 *
 	 * @param string $hook The current admin page hook.
@@ -626,6 +634,17 @@ class WPLLMSEO_Admin {
 		}
 
 		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/health-check.php';
+	}
+
+	/**
+	 * Render AI Index screen
+	 */
+	public static function render_ai_index() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'wpllmseo' ) );
+		}
+
+		require_once WPLLMSEO_PLUGIN_DIR . 'admin/screens/ai-index-settings.php';
 	}
 
 	/**
