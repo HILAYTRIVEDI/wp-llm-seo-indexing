@@ -511,6 +511,28 @@ class WPLLMSEO_Queue {
 	}
 
 	/**
+	 * Clear all completed jobs regardless of age
+	 *
+	 * @return int Number of jobs deleted.
+	 */
+	public function clear_completed_jobs() {
+		global $wpdb;
+
+		$query = "DELETE FROM {$this->table_name} WHERE status = 'completed'";
+		$deleted = $wpdb->query( $query );
+
+		if ( $deleted ) {
+			$this->logger->info(
+				sprintf( 'Cleared %d completed jobs', $deleted ),
+				array(),
+				'queue.log'
+			);
+		}
+
+		return $deleted;
+	}
+
+	/**
 	 * Unlock stale jobs (locked for more than 5 minutes)
 	 *
 	 * @return int Number of jobs unlocked.

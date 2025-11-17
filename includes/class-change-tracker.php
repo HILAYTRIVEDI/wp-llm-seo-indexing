@@ -62,6 +62,12 @@ class WPLLMSEO_Change_Tracker {
 			return;
 		}
 
+		// Check if auto-indexing is enabled
+		$settings = get_option( 'wpllmseo_settings', array() );
+		if ( empty( $settings['auto_index'] ) ) {
+			return;
+		}
+
 		$old_hash = get_post_meta( $post_id, self::CONTENT_HASH_KEY, true );
 		$new_hash = self::generate_content_hash( $post );
 

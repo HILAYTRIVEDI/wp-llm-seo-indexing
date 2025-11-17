@@ -58,9 +58,9 @@ class WPLLMSEO_Admin {
 			wp_send_json_error( array( 'message' => 'Permission denied' ) );
 		}
 
-		// Clear completed jobs older than 1 day
+		// Clear all completed jobs
 		$queue = new WPLLMSEO_Queue();
-		$deleted = $queue->cleanup_old_jobs( 1 );
+		$deleted = $queue->clear_completed_jobs();
 
 		wp_send_json_success( array( 'deleted' => $deleted ) );
 	}

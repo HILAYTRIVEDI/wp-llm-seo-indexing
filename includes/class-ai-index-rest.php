@@ -142,7 +142,7 @@ class WPLLMSEO_AI_Index_REST {
 			'chunk_index_url'       => $site_url . '/ai-index/ai-chunks.ndjson.gz',
 			'embeddings_index_url'  => $embeddings_url,
 			'delta_url'             => $site_url . '/ai-index/ai-chunks-delta.ndjson.gz',
-			'contact'               => admin_url( 'admin.php?page=wpllmseo-settings' ),
+			'contact'               => admin_url( 'admin.php?page=wpllmseo_settings' ),
 			'endpoints'             => array(
 				'chunk'      => rest_url( 'ai-index/v1/chunk/{chunk_id}' ),
 				'embeddings' => rest_url( 'ai-index/v1/embeddings/{chunk_id}' ),

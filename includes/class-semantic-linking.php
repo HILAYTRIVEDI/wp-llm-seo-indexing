@@ -72,7 +72,7 @@ class WPLLMSEO_Semantic_Linking {
 		$settings = get_option( 'wpllmseo_settings', array() );
 
 		if ( empty( $settings['enable_semantic_linking'] ) ) {
-			echo '<p style="color:#666;">Semantic linking is disabled. Enable it in <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo-settings' ) ) . '">settings</a>.</p>';
+			echo '<p style="color:#666;">Semantic linking is disabled. Enable it in <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ) . '">settings</a>.</p>';
 			return;
 		}
 

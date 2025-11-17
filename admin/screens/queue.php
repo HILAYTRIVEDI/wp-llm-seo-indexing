@@ -19,7 +19,7 @@ require_once WPLLMSEO_PLUGIN_DIR . 'admin/components/table.php';
 // Handle bulk actions
 if ( isset( $_POST['wpllmseo_clear_failed_regenerate'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
 	global $wpdb;
-	require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+	require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-db-helpers.php';
 	$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
 	if ( is_wp_error( $validated ) ) {
 		wp_die( esc_html__( 'Queue table not found or invalid.', 'wpllmseo' ) );

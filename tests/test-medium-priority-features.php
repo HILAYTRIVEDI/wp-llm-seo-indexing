@@ -259,7 +259,7 @@ function test_settings() {
 		echo '<p style="color:green;font-weight:bold;">✓ All medium priority settings initialized</p>';
 	}
 
-	echo '<p style="color:blue;">ℹ Settings page: <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo-settings' ) ) . '">' . esc_url( admin_url( 'admin.php?page=wpllmseo-settings' ) ) . '</a></p>';
+	echo '<p style="color:blue;">ℹ Settings page: <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ) . '">' . esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ) . '</a></p>';
 }
 
 // Run all tests.
@@ -276,7 +276,7 @@ echo '<h2>Summary</h2>';
 echo '<p>All medium priority features have been tested. Check above for any errors or warnings.</p>';
 echo '<p><strong>Next Steps:</strong></p>';
 echo '<ul>';
-echo '<li>Enable features in <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo-settings' ) ) . '">Settings</a></li>';
+echo '<li>Enable features in <a href="' . esc_url( admin_url( 'admin.php?page=wpllmseo_settings' ) ) . '">Settings</a></li>';
 echo '<li>Flush rewrite rules by visiting <a href="' . esc_url( admin_url( 'options-permalink.php' ) ) . '">Settings > Permalinks</a></li>';
 echo '<li>Test sitemap endpoints with your access token</li>';
 echo '<li>Try the Semantic Links meta box in post editor</li>';

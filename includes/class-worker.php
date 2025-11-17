@@ -77,30 +77,7 @@ class WPLLMSEO_Worker {
 	 * @return array Processing results.
 	 */
 	public function run( $limit = 10, $bypass_cooldown = false ) {
-		// Check cooldown for manual runs unless explicitly bypassed
-		if ( ! $bypass_cooldown && ! defined( 'WP_CLI' ) ) {
-			$last_manual_run = get_option( 'wpllmseo_worker_last_manual_run', 0 );
-			$cooldown_period = 24 * HOUR_IN_SECONDS; // 24 hours
-			
-			if ( time() - $last_manual_run < $cooldown_period ) {
-				$next_run_time = $last_manual_run + $cooldown_period;
-				$wait_time = human_time_diff( time(), $next_run_time );
-				
-				$this->logger->warning(
-					sprintf( 'Worker cooldown active. Please wait %s before running again.', $wait_time ),
-					array( 'next_run' => date( 'Y-m-d H:i:s', $next_run_time ) ),
-					'worker.log'
-				);
-				
-				return array(
-					'success' => false,
-					'message' => sprintf( 'Worker cooldown active. Please wait %s before running again. This prevents excessive token usage.', $wait_time ),
-					'processed' => 0,
-					'cooldown_active' => true,
-					'next_run' => date( 'Y-m-d H:i:s', $next_run_time ),
-				);
-			}
-		}
+		// Cooldown check removed for manual activation
 		if ( ! $this->acquire_lock() ) {
 			$this->logger->warning(
 				'Worker already running, cannot acquire lock',

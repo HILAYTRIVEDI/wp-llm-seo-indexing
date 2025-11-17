@@ -21,7 +21,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 // Handle regeneration request
 if ( isset( $_POST['wpllmseo_regenerate_all'] ) && check_admin_referer( 'wpllmseo_admin_action', 'wpllmseo_nonce' ) ) {
 	global $wpdb;
-	require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+	require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-db-helpers.php';
 
 	$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
 	if ( is_wp_error( $validated ) ) {
@@ -87,7 +87,7 @@ if ( isset( $_POST['wpllmseo_regenerate_all'] ) && check_admin_referer( 'wpllmse
 		<h2><?php esc_html_e( 'Current Status', 'wpllmseo' ); ?></h2>
 		<?php
 		global $wpdb;
-		require_once __DIR__ . '/../includes/helpers/class-db-helpers.php';
+		require_once WPLLMSEO_PLUGIN_DIR . 'includes/helpers/class-db-helpers.php';
 		$validated = WPLLMSEO_DB_Helpers::validate_table_name( 'wpllmseo_jobs' );
 		$queue_table = is_wp_error( $validated ) ? $wpdb->prefix . 'wpllmseo_jobs' : $validated;
 
